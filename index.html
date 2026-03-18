@@ -322,6 +322,23 @@
             background: var(--border);
         }
 
+        .rate-inline { font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 400; }
+        .rate-label { cursor: pointer; color: var(--text-secondary); transition: var(--transition); }
+        .rate-label:hover { color: var(--accent); }
+        .rate-label:hover .rate-edit-hint { opacity: 1; }
+        .rate-edit-hint { opacity: 0; font-size: 11px; color: var(--text-muted); transition: var(--transition); }
+        .rate-value { font-weight: 500; color: var(--text); }
+        .rate-editor { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+
+        .browse-all-link {
+            font-size: 13px;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 8px;
+            transition: var(--transition);
+        }
+        .browse-all-link:hover { text-decoration: underline; }
+
         /* ============================================================
            TREE AREA
            ============================================================ */
@@ -1383,6 +1400,8 @@
                 <!-- Templates render here -->
             </div>
 
+            <a href="#" id="browseAllLink" class="browse-all-link" onclick="event.preventDefault(); App.openModal('modalTemplates');" style="display:none;">Browse all templates</a>
+
             <div class="empty-divider">or</div>
 
             <button class="btn btn-lg" id="btnStartFresh">
@@ -1836,6 +1855,22 @@
                 ]
             },
             {
+                id: 'employee-onboarding',
+                name: 'New Employee Onboarding',
+                description: '7 steps - Offer accepted to productive hire',
+                icon: '&#x1F3E2;',
+                iconBg: 'var(--teal-bg)',
+                steps: [
+                    { type: 'start', name: 'Offer accepted', description: 'Candidate signs offer letter, start date confirmed', workType: null, assignee: 'HR Manager', timeMinutes: 15, frequency: 'monthly' },
+                    { type: 'action', name: 'Collect paperwork', description: 'Tax forms, benefits enrollment, emergency contacts, ID verification', workType: 'manual_data', assignee: 'HR Coordinator', timeMinutes: 45, frequency: 'monthly' },
+                    { type: 'action', name: 'IT setup', description: 'Laptop, email, Slack, software licenses, badge access', workType: 'manual_data', assignee: 'IT', timeMinutes: 60, frequency: 'monthly' },
+                    { type: 'action', name: 'Orientation day', description: 'Company overview, policies, introductions, office tour', workType: 'communication', assignee: 'HR Manager', timeMinutes: 240, frequency: 'monthly' },
+                    { type: 'action', name: 'Team-specific training', description: 'Manager walks through role, tools, current projects, expectations', workType: 'communication', assignee: 'Manager', timeMinutes: 180, frequency: 'monthly' },
+                    { type: 'decision', name: '30-day check-in', description: 'Manager and HR assess early performance and cultural fit', workType: 'review', assignee: 'HR Manager', timeMinutes: 30, frequency: 'monthly', branches: { yes: { label: 'On track', targetStepId: '' }, no: { label: 'Needs support', targetStepId: '' } } },
+                    { type: 'end', name: 'Fully onboarded', description: 'New hire is productive, integrated, and has all resources', workType: null, assignee: '', timeMinutes: 0, frequency: 'monthly' }
+                ]
+            },
+            {
                 id: 'hiring-pipeline',
                 name: 'Hiring Pipeline',
                 description: '7 steps - Recruit to offer flow',
@@ -1915,7 +1950,7 @@
                 icon: '&#x1F5FA;',
                 iconBg: 'var(--purple-bg)',
                 steps: [
-                    { type: 'start', name: 'Monthly content themes set', description: 'Team decides themes, holidays, campaigns for the month', workType: 'decision_making', assignee: 'Marketing Manager', timeMinutes: 60, frequency: 'monthly' },
+                    { type: 'start', name: 'Monthly content themes set', description: 'Team decides themes, holidays, campaigns for the month', workType: null, assignee: 'Marketing Manager', timeMinutes: 60, frequency: 'monthly' },
                     { type: 'action', name: 'Create content ideas', description: 'Team brainstorms posts, captions, hashtags', workType: 'creative', assignee: 'Content Team', timeMinutes: 120, frequency: 'weekly' },
                     { type: 'action', name: 'Design graphics', description: 'Create visuals in Canva or design tool', workType: 'creative', assignee: 'Designer', timeMinutes: 90, frequency: 'weekly' },
                     { type: 'decision', name: 'Manager approval', description: 'Verify tone, brand fit, no mistakes', workType: 'review', assignee: 'Marketing Manager', timeMinutes: 30, frequency: 'weekly', branches: { yes: { label: 'Approved', targetStepId: '' }, no: { label: 'Revise', targetStepId: '' } } },
@@ -1930,7 +1965,7 @@
                 icon: '&#x1F680;',
                 iconBg: 'var(--red-bg)',
                 steps: [
-                    { type: 'start', name: 'Launch date locked', description: 'Product team confirms launch date and feature scope', workType: 'decision_making', assignee: 'Product Manager', timeMinutes: 60, frequency: 'monthly' },
+                    { type: 'start', name: 'Launch date locked', description: 'Product team confirms launch date and feature scope', workType: null, assignee: 'Product Manager', timeMinutes: 60, frequency: 'monthly' },
                     { type: 'action', name: 'Create messaging docs', description: 'Write value prop, feature descriptions, positioning', workType: 'creative', assignee: 'PMM', timeMinutes: 240, frequency: 'monthly' },
                     { type: 'action', name: 'Build landing page', description: 'Create launch page with testimonials, pricing, demo', workType: 'technical', assignee: 'Web Team', timeMinutes: 180, frequency: 'monthly' },
                     { type: 'action', name: 'Plan PR + launch activities', description: 'Coordinate press release, event, social blitz', workType: 'communication', assignee: 'Marketing Manager', timeMinutes: 120, frequency: 'monthly' },
@@ -1946,7 +1981,7 @@
                 icon: '&#x1F3AD;',
                 iconBg: 'var(--teal-bg)',
                 steps: [
-                    { type: 'start', name: 'Event concept approved', description: 'Date, topic, speaker, audience confirmed', workType: 'decision_making', assignee: 'Event Manager', timeMinutes: 90, frequency: 'biweekly' },
+                    { type: 'start', name: 'Event concept approved', description: 'Date, topic, speaker, audience confirmed', workType: null, assignee: 'Event Manager', timeMinutes: 90, frequency: 'biweekly' },
                     { type: 'action', name: 'Create event page', description: 'Build landing page with description, speakers, registration', workType: 'technical', assignee: 'Web Team', timeMinutes: 120, frequency: 'biweekly' },
                     { type: 'action', name: 'Invite speakers', description: 'Reach out, negotiate, get bios and headshots', workType: 'communication', assignee: 'Event Manager', timeMinutes: 60, frequency: 'biweekly' },
                     { type: 'action', name: 'Create email campaign', description: 'Design series of 4-5 emails (save the date, reminder, reminder, follow-up)', workType: 'creative', assignee: 'Marketing', timeMinutes: 90, frequency: 'biweekly' },
@@ -1963,11 +1998,11 @@
                 icon: '&#x1F3AF;',
                 iconBg: 'var(--amber-bg)',
                 steps: [
-                    { type: 'start', name: 'Inbound lead activity', description: 'Lead visits website, downloads content, clicks ad', workType: null, assignee: 'Marketing Automation', timeMinutes: 2, frequency: 'daily' },
-                    { type: 'action', name: 'Auto-score with firmographics', description: 'System checks company size, industry, location against ICP', workType: 'manual_data', assignee: 'Marketing Automation', timeMinutes: 5, frequency: 'daily' },
-                    { type: 'action', name: 'Check engagement level', description: 'Count interactions: pages viewed, emails opened, time on site', workType: 'review', assignee: 'Marketing Automation', timeMinutes: 3, frequency: 'daily' },
+                    { type: 'start', name: 'Inbound lead activity', description: 'Lead visits website, downloads content, clicks ad', workType: null, assignee: 'Marketing Ops', timeMinutes: 2, frequency: 'daily' },
+                    { type: 'action', name: 'Auto-score with firmographics', description: 'Automated: system checks company size, industry, location against ICP', workType: 'manual_data', assignee: 'Marketing Ops', timeMinutes: 5, frequency: 'daily' },
+                    { type: 'action', name: 'Check engagement level', description: 'Automated: count interactions, pages viewed, emails opened, time on site', workType: 'review', assignee: 'Marketing Ops', timeMinutes: 3, frequency: 'daily' },
                     { type: 'decision', name: 'Sales-ready?', description: 'Does lead meet firmographic score + engagement threshold?', workType: 'decision_making', assignee: 'Marketing Manager', timeMinutes: 10, frequency: 'daily', branches: { yes: { label: 'Send to sales', targetStepId: '' }, no: { label: 'Continue nurture', targetStepId: '' } } },
-                    { type: 'end', name: 'Sales notified', description: 'Lead added to sales queue with context', workType: 'communication', assignee: 'Sales System', timeMinutes: 2, frequency: 'daily' }
+                    { type: 'end', name: 'Sales notified', description: 'Lead added to sales queue with context', workType: 'communication', assignee: 'Sales Ops', timeMinutes: 2, frequency: 'daily' }
                 ]
             },
             {
@@ -2542,13 +2577,15 @@
                 });
             }
 
-            // No parallel paths (purely sequential)
+            // No parallel paths (purely sequential) - only flag long chains
             const hasDecision = steps.some(s => s.type === 'decision');
-            if (steps.length >= 5 && !hasDecision) {
+            const uniqueAssignees = new Set(steps.filter(s => s.assignee).map(s => s.assignee)).size;
+            const isHandoffChain = uniqueAssignees >= Math.floor(steps.length * 0.6);
+            if (steps.length >= 7 && !hasDecision && !isHandoffChain) {
                 patterns.push({
                     type: 'pattern',
                     title: 'Purely Sequential Workflow',
-                    description: 'Every step waits for the previous one. Consider which steps could happen in parallel.',
+                    description: `${steps.length} steps in a single chain with no branching. Consider which steps could happen in parallel.`,
                     severity: 'medium'
                 });
             }
@@ -2718,41 +2755,46 @@
             const steps = model.getSteps();
             const wfName = model.data.workflow.name || 'Workflow';
 
-            let claudeMd = `# CLAUDE.md - ${wfName} Automation\n\n`;
-            claudeMd += `## Workflow Context\n`;
-            claudeMd += `This workflow has ${steps.length} steps, ${analysis.decisionCount} decision points, and involves ${analysis.roles.length} roles.\n`;
-            claudeMd += `Estimated time: ${formatTime(analysis.time.weeklyMinutes)}/week (${analysis.time.annualHours} hours/year)\n`;
-            claudeMd += `AI automation potential: ${analysis.time.savingsPercent}%\n\n`;
+            let spec = `# Automation Specification: ${wfName}\n\n`;
+            spec += `## Overview\n`;
+            spec += `- **Steps:** ${steps.length} (${analysis.decisionCount} decision points)\n`;
+            spec += `- **Roles involved:** ${analysis.roles.join(', ') || 'Not specified'}\n`;
+            spec += `- **Time cost:** ${formatTime(analysis.time.weeklyMinutes)}/week (${analysis.time.annualHours} hours/year)\n`;
+            spec += `- **Automation potential:** ${analysis.time.savingsPercent}% (~$${analysis.cost.potentialSavings.toLocaleString()}/year savings)\n\n`;
 
-            claudeMd += `## Steps to Automate\n`;
-            const automatable = analysis.aiReadiness.filter(a => a.score >= 0.5);
-            automatable.forEach(a => {
-                claudeMd += `- **${a.stepName || 'Unnamed'}** (${workTypeLabel(a.workType)}, ${Math.round(a.score * 100)}% automatable): ${a.suggestion}\n`;
+            spec += `## Current Workflow\n`;
+            steps.forEach((s, i) => {
+                spec += `${i + 1}. **${s.name || 'Step ' + (i + 1)}**`;
+                if (s.assignee) spec += ` (${s.assignee})`;
+                if (s.timeMinutes) spec += ` - ${formatTime(s.timeMinutes)}`;
+                if (s.description) spec += `\n   ${s.description}`;
+                spec += '\n';
             });
 
-            claudeMd += `\n## Bottlenecks to Address\n`;
+            spec += `\n## Steps to Automate (Priority Order)\n`;
+            const automatable = analysis.aiReadiness.filter(a => a.score >= 0.5);
+            automatable.sort((a, b) => b.score - a.score);
+            automatable.forEach((a, i) => {
+                spec += `${i + 1}. **${a.stepName || 'Unnamed'}** (${workTypeLabel(a.workType)}, ${Math.round(a.score * 100)}% automatable)\n`;
+                spec += `   ${a.suggestion}\n`;
+            });
+
+            let impl = `## Bottlenecks\n`;
             if (analysis.bottlenecks.length > 0) {
                 analysis.bottlenecks.forEach(b => {
-                    claudeMd += `- **${b.stepName}**: ${b.reasons.join('; ')}\n`;
+                    impl += `- **${b.stepName}**: ${b.reasons.join('; ')}\n`;
                 });
             } else {
-                claudeMd += `- No major bottlenecks detected\n`;
+                impl += `- No major bottlenecks detected\n`;
             }
 
-            claudeMd += `\n## Automation Guidelines\n`;
-            claudeMd += `- Focus on high-automation steps first (manual data entry, research, creative drafting)\n`;
-            claudeMd += `- Keep humans in the loop for decision-making and final approvals\n`;
-            claudeMd += `- Build skills for repetitive tasks, use hooks for quality checks\n`;
+            impl += `\n## Implementation Notes\n`;
+            impl += `- Automate high-readiness steps first (data entry, research, creative drafting)\n`;
+            impl += `- Keep humans in the loop for decision-making and final approvals\n`;
+            impl += `- Build automation incrementally: start with one step, validate, then expand\n`;
+            impl += `- Estimated ROI: $${analysis.cost.potentialSavings.toLocaleString()}/year at $${analysis.cost.hourlyRate}/hr burdened rate\n`;
 
-            let skills = `# Example Skill: automate-${wfName.toLowerCase().replace(/\s+/g, '-')}\n\n`;
-            skills += `## What this skill does\n`;
-            skills += `Automates the ${wfName} workflow by handling the AI-ready steps.\n\n`;
-            skills += `## Steps handled\n`;
-            automatable.forEach(a => {
-                skills += `1. ${a.stepName} - ${a.suggestion}\n`;
-            });
-
-            return { claudeMd, skills, label: 'Developer Path' };
+            return { claudeMd: spec, skills: impl, label: 'Developer Path' };
         },
 
         _generateTier2(model, analysis) {
@@ -2832,8 +2874,8 @@
 
             let cta = `### Next Steps\n`;
             cta += `Ready to optimize this workflow? Here are three ways forward:\n\n`;
-            cta += `1. **DIY with AI tools** - Use the "Use AI Tools" tab to get a ready-made prompt for ChatGPT or Claude\n`;
-            cta += `2. **Power user path** - Use the "Developer Path" tab for CLAUDE.md configs and automation skills\n`;
+            cta += `1. **DIY with AI tools** - Use the "AI Tools" tab above for a ready-made prompt for ChatGPT or Claude\n`;
+            cta += `2. **Technical spec** - Use the "Developer Path" tab for a full automation specification to hand to your dev team\n`;
             cta += `3. **Get help** - Share this analysis with your team or an AI consultant to prioritize changes\n`;
 
             return { summary, quickWins, roi, cta, label: 'Action Plan' };
@@ -2915,9 +2957,14 @@
                 <div class="time-breakdown">
                     <h3 style="display:flex;align-items:center;justify-content:space-between;">
                         Time & Cost Breakdown
-                        <button class="btn btn-ghost" style="font-size:12px;padding:2px 8px;" onclick="App.openRateModal()">
-                            Edit rate ($${analysis.cost.hourlyRate}/hr)
-                        </button>
+                        <span id="rateDisplay" class="rate-inline">
+                            <span class="rate-label" onclick="App.startEditRate()">at <span class="rate-value">$${analysis.cost.hourlyRate}/hr</span> <span class="rate-edit-hint">(edit)</span></span>
+                            <span class="rate-editor" style="display:none;">
+                                $<input type="number" id="rateInput" value="${analysis.cost.hourlyRate}" min="1" max="500" style="width:60px;font-size:12px;padding:2px 4px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-family:inherit;">/hr
+                                <button class="btn btn-ghost" style="font-size:11px;padding:1px 6px;" onclick="App.saveRate()">Save</button>
+                                <button class="btn btn-ghost" style="font-size:11px;padding:1px 6px;" onclick="App.cancelEditRate()">Cancel</button>
+                            </span>
+                        </span>
                     </h3>
                     <div class="time-stats">
                         <div class="stat-item">
@@ -3255,8 +3302,12 @@ Be specific. Infer work types and time estimates from context. Always include a 
         },
 
         renderTemplateCards() {
+            const all = TemplateLibrary.getAll();
+            const featured = all.slice(0, 4);
+
+            // Landing page: show only 4 featured templates
             const grid = document.getElementById('templateGrid');
-            grid.innerHTML = TemplateLibrary.getAll().map(t => `
+            grid.innerHTML = featured.map(t => `
                 <div class="template-card" onclick="App.loadTemplate('${t.id}')">
                     <div class="template-card-icon" style="background:${t.iconBg}">${t.icon}</div>
                     <h3>${t.name}</h3>
@@ -3264,9 +3315,16 @@ Be specific. Infer work types and time estimates from context. Always include a 
                 </div>
             `).join('');
 
-            // Also render in modal
+            // "Browse all" link (only show if more than 4 templates)
+            const browseLink = document.getElementById('browseAllLink');
+            if (browseLink) {
+                browseLink.style.display = all.length > 4 ? 'block' : 'none';
+                browseLink.textContent = `Browse all ${all.length} templates`;
+            }
+
+            // Modal: show ALL templates
             const list = document.getElementById('templateList');
-            list.innerHTML = TemplateLibrary.getAll().map(t => `
+            list.innerHTML = all.map(t => `
                 <div class="template-list-item" onclick="App.loadTemplate('${t.id}'); App.closeModal('modalTemplates');">
                     <div class="tli-icon" style="background:${t.iconBg}">${t.icon}</div>
                     <div class="tli-info">
@@ -3701,21 +3759,41 @@ Be specific. Infer work types and time estimates from context. Always include a 
             }, 2200);
         },
 
-        // Rate adjustment
-        openRateModal() {
-            const currentRate = userHourlyRate;
-            const newRate = prompt(`Enter hourly rate (current: $${currentRate}/hr):`, currentRate.toString());
-            if (newRate !== null && newRate.trim() !== '') {
-                const rate = parseInt(newRate, 10);
-                if (!isNaN(rate) && rate > 0 && rate <= 500) {
-                    userHourlyRate = rate;
-                    localStorage.setItem('workflow-analyzer-hourly-rate', rate.toString());
-                    this.analyze(); // Re-analyze with new rate
-                    this.toast(`Hourly rate updated to $${rate}/hr`);
-                } else {
-                    this.toast('Please enter a valid rate between $1 and $500');
-                }
+        // Inline rate editing
+        startEditRate() {
+            const display = document.getElementById('rateDisplay');
+            if (!display) return;
+            display.querySelector('.rate-label').style.display = 'none';
+            display.querySelector('.rate-editor').style.display = 'inline-flex';
+            const input = document.getElementById('rateInput');
+            input.focus();
+            input.select();
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this.saveRate();
+                if (e.key === 'Escape') this.cancelEditRate();
+            }, { once: false });
+        },
+
+        saveRate() {
+            const input = document.getElementById('rateInput');
+            const rate = parseInt(input.value, 10);
+            if (!isNaN(rate) && rate > 0 && rate <= 500) {
+                userHourlyRate = rate;
+                localStorage.setItem('workflow-analyzer-hourly-rate', rate.toString());
+                this.analyze();
+                this.toast(`Rate updated to $${rate}/hr`);
+            } else {
+                this.toast('Enter a rate between $1 and $500');
+                this.cancelEditRate();
             }
+        },
+
+        cancelEditRate() {
+            const display = document.getElementById('rateDisplay');
+            if (!display) return;
+            display.querySelector('.rate-label').style.display = 'inline';
+            display.querySelector('.rate-editor').style.display = 'none';
+            document.getElementById('rateInput').value = userHourlyRate;
         }
     };
 
