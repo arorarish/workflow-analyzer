@@ -1598,6 +1598,12 @@
         'decision_making': 0.20, 'technical': 0.15, 'other': 0.10
     };
 
+    // User-configurable hourly rate for cost calculations
+    let userHourlyRate = (() => {
+        const stored = localStorage.getItem('workflow-analyzer-hourly-rate');
+        return stored ? parseInt(stored, 10) : 48;
+    })();
+
     // ============================================================
     // WORKFLOW MODEL (State Manager)
     // ============================================================
@@ -1857,6 +1863,142 @@
                     { type: 'action', name: 'Investigate and fix', description: 'Developer reproduces, identifies root cause, writes fix', workType: 'technical', assignee: 'Developer', timeMinutes: 120, frequency: 'daily' },
                     { type: 'action', name: 'Code review and test', description: 'PR review, automated tests pass, QA verification', workType: 'review', assignee: 'Engineering Lead', timeMinutes: 30, frequency: 'daily' },
                     { type: 'end', name: 'Fix deployed', description: 'Merged to main, deployed to production, customer notified', workType: 'manual_data', assignee: 'Developer', timeMinutes: 15, frequency: 'daily' }
+                ]
+            },
+            {
+                id: 'performance-review',
+                name: 'Performance Review Cycle',
+                description: '6 steps - Annual employee review workflow',
+                icon: '&#x1F4C8;',
+                iconBg: 'var(--amber-bg)',
+                steps: [
+                    { type: 'start', name: 'Review period opens', description: 'HR announces review cycle timeline and instructions to managers', workType: null, assignee: 'HR Manager', timeMinutes: 30, frequency: 'quarterly' },
+                    { type: 'action', name: 'Manager writes evaluation', description: 'Manager completes structured feedback form for each direct report', workType: 'communication', assignee: 'Manager', timeMinutes: 120, frequency: 'quarterly' },
+                    { type: 'action', name: 'Employee self-assessment', description: 'Employee completes self-evaluation and career goals', workType: 'communication', assignee: 'Employee', timeMinutes: 90, frequency: 'quarterly' },
+                    { type: 'decision', name: 'HR review for calibration', description: 'HR ensures ratings are consistent across departments', workType: 'review', assignee: 'HR Manager', timeMinutes: 30, frequency: 'quarterly', branches: { yes: { label: 'Approved', targetStepId: '' }, no: { label: 'Adjust', targetStepId: '' } } },
+                    { type: 'action', name: 'Review meeting', description: 'Manager and employee meet to discuss feedback and goals', workType: 'communication', assignee: 'Manager', timeMinutes: 60, frequency: 'quarterly' },
+                    { type: 'end', name: 'Review filed', description: 'Final evaluation filed in HR system, goals documented', workType: 'manual_data', assignee: 'HR Manager', timeMinutes: 15, frequency: 'quarterly' }
+                ]
+            },
+            {
+                id: 'sales-outreach',
+                name: 'Sales Outreach Sequence',
+                description: '5 steps - Lead qualification and outreach',
+                icon: '&#x1F4B5;',
+                iconBg: 'var(--green-bg)',
+                steps: [
+                    { type: 'start', name: 'Lead enters system', description: 'Lead captured from website, event, or partner', workType: null, assignee: 'Sales Ops', timeMinutes: 5, frequency: 'daily' },
+                    { type: 'action', name: 'Initial email sequence', description: 'Trigger automated welcome email + intro sequence (3-4 emails)', workType: 'communication', assignee: 'Marketing', timeMinutes: 20, frequency: 'daily' },
+                    { type: 'action', name: 'Qualification call', description: 'SDR calls to confirm fit and uncover needs (15 min)', workType: 'communication', assignee: 'SDR', timeMinutes: 30, frequency: 'daily' },
+                    { type: 'decision', name: 'Sales qualified lead?', description: 'Does this fit our ICP and have budget?', workType: 'decision_making', assignee: 'Sales Manager', timeMinutes: 5, frequency: 'daily', branches: { yes: { label: 'Qualified', targetStepId: '' }, no: { label: 'Not ready', targetStepId: '' } } },
+                    { type: 'end', name: 'Handoff to AE', description: 'Qualified lead passed to Account Executive with brief', workType: 'communication', assignee: 'Sales Manager', timeMinutes: 10, frequency: 'daily' }
+                ]
+            },
+            {
+                id: 'invoice-approval',
+                name: 'Invoice Approval',
+                description: '5 steps - Vendor invoice processing',
+                icon: '&#x1F4C4;',
+                iconBg: 'var(--blue-bg)',
+                steps: [
+                    { type: 'start', name: 'Invoice received', description: 'Invoice arrives via email or portal', workType: null, assignee: 'Accounts Payable', timeMinutes: 5, frequency: '3_per_week' },
+                    { type: 'action', name: 'Match to PO', description: 'Verify invoice matches purchase order and receipt', workType: 'review', assignee: 'Accounts Payable', timeMinutes: 15, frequency: '3_per_week' },
+                    { type: 'decision', name: 'Details correct?', description: 'Check amount, line items, dates match', workType: 'review', assignee: 'Accounts Payable', timeMinutes: 10, frequency: '3_per_week', branches: { yes: { label: 'Approved', targetStepId: '' }, no: { label: 'Request correction', targetStepId: '' } } },
+                    { type: 'action', name: 'Manager sign-off', description: 'Department manager approves the expense (for large invoices)', workType: 'decision_making', assignee: 'Manager', timeMinutes: 5, frequency: '3_per_week' },
+                    { type: 'end', name: 'Payment scheduled', description: 'Invoice scheduled for payment and recorded in system', workType: 'manual_data', assignee: 'Accounts Payable', timeMinutes: 10, frequency: '3_per_week' }
+                ]
+            },
+            {
+                id: 'social-calendar',
+                name: 'Social Media Content Calendar',
+                description: '6 steps - Weekly content planning and publishing',
+                icon: '&#x1F5FA;',
+                iconBg: 'var(--purple-bg)',
+                steps: [
+                    { type: 'start', name: 'Monthly content themes set', description: 'Team decides themes, holidays, campaigns for the month', workType: 'decision_making', assignee: 'Marketing Manager', timeMinutes: 60, frequency: 'monthly' },
+                    { type: 'action', name: 'Create content ideas', description: 'Team brainstorms posts, captions, hashtags', workType: 'creative', assignee: 'Content Team', timeMinutes: 120, frequency: 'weekly' },
+                    { type: 'action', name: 'Design graphics', description: 'Create visuals in Canva or design tool', workType: 'creative', assignee: 'Designer', timeMinutes: 90, frequency: 'weekly' },
+                    { type: 'decision', name: 'Manager approval', description: 'Verify tone, brand fit, no mistakes', workType: 'review', assignee: 'Marketing Manager', timeMinutes: 30, frequency: 'weekly', branches: { yes: { label: 'Approved', targetStepId: '' }, no: { label: 'Revise', targetStepId: '' } } },
+                    { type: 'action', name: 'Schedule posts', description: 'Upload to Buffer/Later, schedule for the week', workType: 'manual_data', assignee: 'Content Coordinator', timeMinutes: 20, frequency: 'weekly' },
+                    { type: 'end', name: 'Week published', description: 'Posts scheduled, team monitors engagement', workType: null, assignee: '', timeMinutes: 0, frequency: 'weekly' }
+                ]
+            },
+            {
+                id: 'product-launch',
+                name: 'Product Launch Planning',
+                description: '7 steps - Pre-launch to go-live',
+                icon: '&#x1F680;',
+                iconBg: 'var(--red-bg)',
+                steps: [
+                    { type: 'start', name: 'Launch date locked', description: 'Product team confirms launch date and feature scope', workType: 'decision_making', assignee: 'Product Manager', timeMinutes: 60, frequency: 'monthly' },
+                    { type: 'action', name: 'Create messaging docs', description: 'Write value prop, feature descriptions, positioning', workType: 'creative', assignee: 'PMM', timeMinutes: 240, frequency: 'monthly' },
+                    { type: 'action', name: 'Build landing page', description: 'Create launch page with testimonials, pricing, demo', workType: 'technical', assignee: 'Web Team', timeMinutes: 180, frequency: 'monthly' },
+                    { type: 'action', name: 'Plan PR + launch activities', description: 'Coordinate press release, event, social blitz', workType: 'communication', assignee: 'Marketing Manager', timeMinutes: 120, frequency: 'monthly' },
+                    { type: 'decision', name: 'Internal sign-off', description: 'Product, Eng, Legal review launch readiness', workType: 'decision_making', assignee: 'Product Manager', timeMinutes: 45, frequency: 'monthly', branches: { yes: { label: 'Ready', targetStepId: '' }, no: { label: 'Delay', targetStepId: '' } } },
+                    { type: 'action', name: 'Launch execution', description: 'Publish landing page, send PR, activate campaigns', workType: 'communication', assignee: 'Marketing Manager', timeMinutes: 120, frequency: 'monthly' },
+                    { type: 'end', name: 'Launch live', description: 'Monitor traffic, track signups, gather feedback', workType: null, assignee: '', timeMinutes: 0, frequency: 'monthly' }
+                ]
+            },
+            {
+                id: 'event-planning',
+                name: 'Event/Webinar Planning',
+                description: '8 steps - Event from conception to follow-up',
+                icon: '&#x1F3AD;',
+                iconBg: 'var(--teal-bg)',
+                steps: [
+                    { type: 'start', name: 'Event concept approved', description: 'Date, topic, speaker, audience confirmed', workType: 'decision_making', assignee: 'Event Manager', timeMinutes: 90, frequency: 'biweekly' },
+                    { type: 'action', name: 'Create event page', description: 'Build landing page with description, speakers, registration', workType: 'technical', assignee: 'Web Team', timeMinutes: 120, frequency: 'biweekly' },
+                    { type: 'action', name: 'Invite speakers', description: 'Reach out, negotiate, get bios and headshots', workType: 'communication', assignee: 'Event Manager', timeMinutes: 60, frequency: 'biweekly' },
+                    { type: 'action', name: 'Create email campaign', description: 'Design series of 4-5 emails (save the date, reminder, reminder, follow-up)', workType: 'creative', assignee: 'Marketing', timeMinutes: 90, frequency: 'biweekly' },
+                    { type: 'action', name: 'Promotional activities', description: 'Social posts, ads, partnerships, influencer outreach', workType: 'communication', assignee: 'Marketing Manager', timeMinutes: 120, frequency: 'biweekly' },
+                    { type: 'action', name: 'Event execution', description: 'Tech check, manage slides, moderate Q&A, take notes', workType: 'communication', assignee: 'Event Manager', timeMinutes: 180, frequency: 'biweekly' },
+                    { type: 'action', name: 'Post-event follow-up', description: 'Send recording, thank you emails, content repurposing', workType: 'communication', assignee: 'Marketing', timeMinutes: 90, frequency: 'biweekly' },
+                    { type: 'end', name: 'Event closed', description: 'Leads qualified and handed to sales', workType: 'manual_data', assignee: 'Event Manager', timeMinutes: 30, frequency: 'biweekly' }
+                ]
+            },
+            {
+                id: 'lead-qualification',
+                name: 'Lead Qualification',
+                description: '5 steps - Determine sales-ready leads',
+                icon: '&#x1F3AF;',
+                iconBg: 'var(--amber-bg)',
+                steps: [
+                    { type: 'start', name: 'Inbound lead activity', description: 'Lead visits website, downloads content, clicks ad', workType: null, assignee: 'Marketing Automation', timeMinutes: 2, frequency: 'daily' },
+                    { type: 'action', name: 'Auto-score with firmographics', description: 'System checks company size, industry, location against ICP', workType: 'manual_data', assignee: 'Marketing Automation', timeMinutes: 5, frequency: 'daily' },
+                    { type: 'action', name: 'Check engagement level', description: 'Count interactions: pages viewed, emails opened, time on site', workType: 'review', assignee: 'Marketing Automation', timeMinutes: 3, frequency: 'daily' },
+                    { type: 'decision', name: 'Sales-ready?', description: 'Does lead meet firmographic score + engagement threshold?', workType: 'decision_making', assignee: 'Marketing Manager', timeMinutes: 10, frequency: 'daily', branches: { yes: { label: 'Send to sales', targetStepId: '' }, no: { label: 'Continue nurture', targetStepId: '' } } },
+                    { type: 'end', name: 'Sales notified', description: 'Lead added to sales queue with context', workType: 'communication', assignee: 'Sales System', timeMinutes: 2, frequency: 'daily' }
+                ]
+            },
+            {
+                id: 'monthly-reporting',
+                name: 'Monthly Reporting',
+                description: '6 steps - Gather data and produce monthly report',
+                icon: '&#x1F4FA;',
+                iconBg: 'var(--blue-bg)',
+                steps: [
+                    { type: 'start', name: 'Month ends', description: 'Final day of month - begin data collection', workType: null, assignee: 'Analytics', timeMinutes: 10, frequency: 'monthly' },
+                    { type: 'action', name: 'Gather data from tools', description: 'Export metrics from Google Analytics, CRM, ad platforms, dashboards', workType: 'manual_data', assignee: 'Analytics', timeMinutes: 120, frequency: 'monthly' },
+                    { type: 'action', name: 'Write narrative', description: 'Create context paragraphs: wins, challenges, month summary', workType: 'communication', assignee: 'Manager', timeMinutes: 90, frequency: 'monthly' },
+                    { type: 'decision', name: 'Review numbers', description: 'Manager reviews data for accuracy and completeness', workType: 'review', assignee: 'Manager', timeMinutes: 45, frequency: 'monthly', branches: { yes: { label: 'Correct', targetStepId: '' }, no: { label: 'Recheck', targetStepId: '' } } },
+                    { type: 'action', name: 'Create presentation', description: 'Design deck with charts, graphs, key insights', workType: 'creative', assignee: 'Communications', timeMinutes: 120, frequency: 'monthly' },
+                    { type: 'end', name: 'Report sent', description: 'Shared with leadership via email or dashboard', workType: 'communication', assignee: 'Manager', timeMinutes: 15, frequency: 'monthly' }
+                ]
+            },
+            {
+                id: 'vendor-onboarding',
+                name: 'Vendor Onboarding',
+                description: '7 steps - New vendor setup and contracting',
+                icon: '&#x1F91E;',
+                iconBg: 'var(--green-bg)',
+                steps: [
+                    { type: 'start', name: 'Vendor selected', description: 'Team chooses vendor, initial conversation', workType: null, assignee: 'Procurement', timeMinutes: 30, frequency: 'weekly' },
+                    { type: 'action', name: 'Request pricing + proposal', description: 'Ask for quote, SOW, terms document', workType: 'communication', assignee: 'Procurement', timeMinutes: 20, frequency: 'weekly' },
+                    { type: 'action', name: 'Review contract', description: 'Legal and procurement review terms, liability, data clauses', workType: 'review', assignee: 'Legal', timeMinutes: 120, frequency: 'weekly' },
+                    { type: 'decision', name: 'Terms acceptable?', description: 'All clauses negotiated and agreed', workType: 'decision_making', assignee: 'Procurement Manager', timeMinutes: 30, frequency: 'weekly', branches: { yes: { label: 'Approved', targetStepId: '' }, no: { label: 'Renegotiate', targetStepId: '' } } },
+                    { type: 'action', name: 'Set up accounts', description: 'Create accounts, set SSO, configure integrations', workType: 'technical', assignee: 'IT', timeMinutes: 60, frequency: 'weekly' },
+                    { type: 'action', name: 'Team training', description: 'Brief staff on how to use vendor tool/service', workType: 'communication', assignee: 'Procurement', timeMinutes: 45, frequency: 'weekly' },
+                    { type: 'end', name: 'Vendor live', description: 'All teams onboarded, usage can begin', workType: null, assignee: '', timeMinutes: 0, frequency: 'weekly' }
                 ]
             }
         ],
@@ -2306,19 +2448,10 @@
                     }
                 }
 
-                // High time relative to workflow
+                // High time relative to workflow (only flag if truly disproportionate)
                 const totalTime = steps.reduce((sum, s) => sum + (s.timeMinutes || 0), 0);
-                if (step.timeMinutes > 0 && totalTime > 0 && (step.timeMinutes / totalTime) > 0.3) {
+                if (step.timeMinutes > 0 && totalTime > 0 && (step.timeMinutes / totalTime) > 0.4) {
                     reasons.push(`Takes ${Math.round((step.timeMinutes / totalTime) * 100)}% of total workflow time`);
-                }
-
-                // Sequential chain - step depends on single prior and feeds single next
-                if (idx > 0 && idx < steps.length - 1 && step.type !== 'decision') {
-                    const isLinear = steps.every(s => !s.branches || s.type !== 'decision' ||
-                        (s.branches.yes && s.branches.yes.targetStepId !== step.id));
-                    if (isLinear && step.timeMinutes >= 60) {
-                        reasons.push('Sequential step taking 1+ hours with no parallel path');
-                    }
                 }
 
                 if (reasons.length > 0) {
@@ -2343,14 +2476,14 @@
 
         _getAISuggestion(workType) {
             const suggestions = {
-                'manual_data': 'Automate with data extraction, form filling, or API integrations',
-                'research': 'Use AI-powered research assistants, automated data gathering',
-                'creative': 'AI can draft content, generate variations, accelerate ideation',
-                'review': 'AI can flag issues, check against guidelines, pre-screen',
-                'communication': 'Auto-draft emails, summaries, meeting prep',
-                'decision_making': 'AI can surface data and recommendations, but humans decide',
-                'technical': 'AI can assist with code, testing, debugging, documentation',
-                'other': 'Evaluate if this step can be broken into more specific work types'
+                'manual_data': 'Use Zapier, Make, or Claude to handle data transfer. Example: automate form submissions → CRM entries, or reconcile spreadsheets.',
+                'research': 'Perplexity, Claude, or ChatGPT can research in minutes. Give it search criteria and ask for a structured summary with key findings.',
+                'creative': 'Claude or ChatGPT can draft content, generate variations, and improve copy. Paste your brief and ask for 3 versions to choose from.',
+                'review': 'Paste your guidelines into Claude and ask it to review drafts against them. Great for first-pass filtering before human review.',
+                'communication': 'Use ChatGPT or Claude to draft email templates. Describe the context and ask for multiple versions (formal, casual, brief).',
+                'decision_making': 'AI can summarize data and surface recommendations, but humans make the final call. Use it to reduce decision prep time.',
+                'technical': 'Claude, ChatGPT, or GitHub Copilot can assist with code reviews, test generation, debugging, and documentation.',
+                'other': 'Break this step into more specific work types (data entry, creative, review, communication) for better suggestions.'
             };
             return suggestions[workType] || suggestions['other'];
         },
@@ -2378,11 +2511,10 @@
         },
 
         _estimateCost(time) {
-            const hourlyRate = 48; // Average burdened rate
             return {
-                annualCost: Math.round(time.annualHours * hourlyRate),
-                potentialSavings: Math.round(time.aiAutomatableHours * hourlyRate),
-                hourlyRate
+                annualCost: Math.round(time.annualHours * userHourlyRate),
+                potentialSavings: Math.round(time.aiAutomatableHours * userHourlyRate),
+                hourlyRate: userHourlyRate
             };
         },
 
@@ -2620,7 +2752,7 @@
                 skills += `1. ${a.stepName} - ${a.suggestion}\n`;
             });
 
-            return { claudeMd, skills, label: 'Claude Code' };
+            return { claudeMd, skills, label: 'Developer Path' };
         },
 
         _generateTier2(model, analysis) {
@@ -2699,12 +2831,12 @@
             roi += `- **Efficiency gain:** ${analysis.time.savingsPercent}% of workflow automatable\n`;
 
             let cta = `### Next Steps\n`;
-            cta += `Want to implement these improvements? Here are three paths:\n\n`;
-            cta += `1. **DIY with AI tools** - Use the "AI Tools" tab to get a ready-made prompt for ChatGPT or Claude\n`;
-            cta += `2. **Power user path** - Use the "Claude Code" tab for CLAUDE.md configs and automation skills\n`;
+            cta += `Ready to optimize this workflow? Here are three ways forward:\n\n`;
+            cta += `1. **DIY with AI tools** - Use the "Use AI Tools" tab to get a ready-made prompt for ChatGPT or Claude\n`;
+            cta += `2. **Power user path** - Use the "Developer Path" tab for CLAUDE.md configs and automation skills\n`;
             cta += `3. **Get help** - Share this analysis with your team or an AI consultant to prioritize changes\n`;
 
-            return { summary, quickWins, roi, cta, label: 'Exploring AI' };
+            return { summary, quickWins, roi, cta, label: 'Action Plan' };
         }
     };
 
@@ -2781,7 +2913,12 @@
             // Time breakdown
             html += `
                 <div class="time-breakdown">
-                    <h3>Time & Cost Breakdown</h3>
+                    <h3 style="display:flex;align-items:center;justify-content:space-between;">
+                        Time & Cost Breakdown
+                        <button class="btn btn-ghost" style="font-size:12px;padding:2px 8px;" onclick="App.openRateModal()">
+                            Edit rate ($${analysis.cost.hourlyRate}/hr)
+                        </button>
+                    </h3>
                     <div class="time-stats">
                         <div class="stat-item">
                             <span class="time-stat-value">${formatTime(analysis.time.weeklyMinutes)}</span>
@@ -2830,7 +2967,7 @@
     // OUTPUT VIEW (UI Renderer for 3-tier export)
     // ============================================================
     const OutputView = {
-        currentTier: 'tier2',
+        currentTier: 'tier3',
         outputData: null,
 
         render(output) {
@@ -3562,6 +3699,23 @@ Be specific. Infer work types and time estimates from context. Always include a 
             this._toastTimer = setTimeout(() => {
                 toast.classList.remove('visible');
             }, 2200);
+        },
+
+        // Rate adjustment
+        openRateModal() {
+            const currentRate = userHourlyRate;
+            const newRate = prompt(`Enter hourly rate (current: $${currentRate}/hr):`, currentRate.toString());
+            if (newRate !== null && newRate.trim() !== '') {
+                const rate = parseInt(newRate, 10);
+                if (!isNaN(rate) && rate > 0 && rate <= 500) {
+                    userHourlyRate = rate;
+                    localStorage.setItem('workflow-analyzer-hourly-rate', rate.toString());
+                    this.analyze(); // Re-analyze with new rate
+                    this.toast(`Hourly rate updated to $${rate}/hr`);
+                } else {
+                    this.toast('Please enter a valid rate between $1 and $500');
+                }
+            }
         }
     };
 
