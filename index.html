@@ -1,0 +1,3574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================================
+           CSS VARIABLES + RESET
+           ============================================================ */
+        :root {
+            --bg: #FAF8F5;
+            --bg-card: #FFFFFF;
+            --bg-hover: #FAFAF9;
+            --bg-selected: #FFF7ED;
+            --text: #1C1917;
+            --text-secondary: #78716C;
+            --text-muted: #A8A29E;
+            --border: #E7E5E4;
+            --border-strong: #D6D3D1;
+            --border-focus: #E8804C;
+
+            --green: #166534;
+            --green-bg: #F0FDF4;
+            --green-border: #BBF7D0;
+            --green-accent: #22C55E;
+
+            --red: #991B1B;
+            --red-bg: #FEF2F2;
+            --red-border: #FECACA;
+            --red-accent: #EF4444;
+
+            --blue: #1E3A5F;
+            --blue-bg: #F0F7FF;
+            --blue-border: #BFDBFE;
+            --blue-accent: #3B82F6;
+
+            --amber: #92400E;
+            --amber-bg: #FFFBEB;
+            --amber-border: #FDE68A;
+            --amber-accent: #F59E0B;
+
+            --purple: #6B21A8;
+            --purple-bg: #FAF5FF;
+            --purple-border: #E9D5FF;
+            --purple-accent: #A855F7;
+
+            --teal: #115E59;
+            --teal-bg: #F0FDFA;
+            --teal-border: #99F6E4;
+            --teal-accent: #14B8A6;
+
+            --accent: #E8804C;
+            --accent-hover: #D97042;
+            --accent-bg: #FFF7ED;
+            --accent-border: #FDBA74;
+
+            --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.04);
+            --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.06);
+            --shadow-lg: 0 8px 24px rgba(28, 25, 23, 0.08);
+            --shadow-xl: 0 16px 48px rgba(28, 25, 23, 0.10);
+
+            --radius: 12px;
+            --radius-sm: 6px;
+            --radius-lg: 16px;
+
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-spring: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+            --step-start: var(--teal-accent);
+            --step-action: var(--blue-accent);
+            --step-decision: var(--amber-accent);
+            --step-end: var(--purple-accent);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        /* Subtle grain texture */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0.015;
+            pointer-events: none;
+            z-index: 9999;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            background-size: 128px;
+        }
+
+        h1, h2, h3 { font-family: 'Instrument Serif', serif; font-weight: 400; }
+
+        /* ============================================================
+           TOPBAR
+           ============================================================ */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(250, 248, 245, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+        }
+        .topbar-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+            gap: 16px;
+        }
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+        .topbar-brand {
+            font-family: 'Instrument Serif', serif;
+            font-size: 20px;
+            color: var(--text);
+            white-space: nowrap;
+            letter-spacing: -0.01em;
+        }
+        .topbar-brand span { color: var(--accent); }
+        .topbar-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border-strong);
+            flex-shrink: 0;
+        }
+        .workflow-name-input {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text);
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            min-width: 160px;
+            max-width: 320px;
+            transition: var(--transition);
+        }
+        .workflow-name-input:hover { border-color: var(--border); }
+        .workflow-name-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--bg-card);
+        }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        /* Buttons */
+        .btn {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+        .btn:active { transform: scale(0.98); }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+        .btn-ghost {
+            background: transparent;
+            border-color: transparent;
+            color: var(--text-secondary);
+        }
+        .btn-ghost:hover { background: var(--bg-hover); border-color: var(--border); color: var(--text); }
+
+        .btn-icon {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-lg {
+            font-size: 15px;
+            padding: 10px 24px;
+            border-radius: var(--radius);
+        }
+
+        /* ============================================================
+           MAIN LAYOUT
+           ============================================================ */
+        .app-layout {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+            min-height: calc(100vh - 56px);
+        }
+
+        /* ============================================================
+           EMPTY STATE
+           ============================================================ */
+        .empty-state {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 24px;
+            animation: fadeUp 0.6s ease;
+        }
+        .empty-state h1 {
+            font-size: 36px;
+            line-height: 1.2;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        .empty-state h1 em {
+            font-style: italic;
+            color: var(--accent);
+        }
+        .empty-state p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 480px;
+            margin-bottom: 32px;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            max-width: 560px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .template-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            cursor: pointer;
+            text-align: left;
+            transition: var(--transition);
+        }
+        .template-card:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        .template-card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .template-card h3 {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        .template-card p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .empty-divider {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            max-width: 560px;
+        }
+        .empty-divider::before, .empty-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ============================================================
+           TREE AREA
+           ============================================================ */
+        .tree-area {
+            display: none;
+            flex-direction: column;
+            gap: 0;
+        }
+        .tree-area.active { display: flex; }
+
+        .tree-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 0 24px;
+        }
+
+        /* Step Card */
+        .step-card {
+            width: 100%;
+            max-width: 520px;
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            transition: var(--transition);
+            animation: cardEnter 0.35s ease both;
+            position: relative;
+        }
+        .step-card:hover {
+            border-color: var(--border-strong);
+            box-shadow: var(--shadow-md);
+        }
+        .step-card.expanded {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-lg);
+        }
+        .step-card.type-start { border-left: 3px solid var(--step-start); }
+        .step-card.type-action { border-left: 3px solid var(--step-action); }
+        .step-card.type-decision { border-left: 3px solid var(--step-decision); }
+        .step-card.type-end { border-left: 3px solid var(--step-end); }
+
+        /* Card header (always visible) */
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .step-type-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .type-start .step-type-dot { background: var(--step-start); }
+        .type-action .step-type-dot { background: var(--step-action); }
+        .type-decision .step-type-dot {
+            background: var(--step-decision);
+            border-radius: 2px;
+            transform: rotate(45deg);
+            width: 9px;
+            height: 9px;
+        }
+        .type-end .step-type-dot { background: var(--step-end); }
+
+        .step-order {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            min-width: 18px;
+        }
+        .step-name {
+            flex: 1;
+            font-weight: 500;
+            font-size: 14px;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .step-name.placeholder { color: var(--text-muted); font-style: italic; }
+
+        .step-badges {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .step-badge {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 100px;
+            white-space: nowrap;
+        }
+        .step-badge.assignee { background: var(--blue-bg); color: var(--blue); }
+        .step-badge.time {
+            background: var(--bg);
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+        }
+        .step-badge.type-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .step-expand-icon {
+            color: var(--text-muted);
+            transition: var(--transition);
+            flex-shrink: 0;
+            font-size: 12px;
+        }
+        .step-card.expanded .step-expand-icon { transform: rotate(180deg); }
+
+        /* Card detail panel (expanded) */
+        .step-details {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.35s ease;
+            border-top: 1px solid transparent;
+        }
+        .step-card.expanded .step-details {
+            max-height: 600px;
+            opacity: 1;
+            border-top-color: var(--border);
+        }
+        .step-details-inner {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Form fields */
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .field-group { display: flex; flex-direction: column; gap: 4px; }
+        .field-group.full { grid-column: 1 / -1; }
+        .field-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+        .field-input, .field-select, .field-textarea {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            width: 100%;
+        }
+        .field-textarea {
+            resize: vertical;
+            min-height: 56px;
+            line-height: 1.5;
+        }
+        .field-input:focus, .field-select:focus, .field-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--bg-card);
+        }
+        .field-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A8A29E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+        }
+
+        /* Time input with unit */
+        .time-input-group {
+            display: flex;
+            gap: 0;
+        }
+        .time-input-group .field-input {
+            border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+            border-right: none;
+            width: 70px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .time-input-group .time-unit {
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            padding: 8px 10px;
+            white-space: nowrap;
+        }
+
+        /* Decision toggle */
+        .decision-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 2px;
+        }
+        .toggle-switch {
+            width: 36px;
+            height: 20px;
+            background: var(--border-strong);
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .toggle-switch.active { background: var(--step-decision); }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            transition: var(--transition);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .toggle-switch.active::after { left: 18px; }
+        .toggle-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Branch labels for decision steps */
+        .branch-config {
+            display: none;
+            gap: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .branch-config.visible { display: grid; grid-template-columns: 1fr 1fr; }
+        .branch-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .branch-label-header {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .branch-label-header .dot {
+            width: 6px; height: 6px; border-radius: 50%;
+        }
+        .branch-label-header .dot.yes { background: var(--green-accent); }
+        .branch-label-header .dot.no { background: var(--red-accent); }
+        .branch-target-select {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            color: var(--text);
+        }
+
+        /* Card actions */
+        .step-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            margin-top: 2px;
+        }
+        .btn-delete {
+            font-size: 12px;
+            color: var(--red);
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: 'DM Sans', sans-serif;
+        }
+        .btn-delete:hover {
+            background: var(--red-bg);
+            border-color: var(--red-border);
+        }
+
+        /* ============================================================
+           CONNECTORS
+           ============================================================ */
+        .connector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            height: 36px;
+            width: 100%;
+            max-width: 520px;
+        }
+        .connector-line {
+            width: 1.5px;
+            flex: 1;
+            background: repeating-linear-gradient(
+                to bottom,
+                var(--border-strong) 0,
+                var(--border-strong) 4px,
+                transparent 4px,
+                transparent 8px
+            );
+        }
+
+        /* Add step button */
+        .add-step-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-spring);
+            opacity: 0;
+            z-index: 2;
+        }
+        .connector:hover .add-step-btn {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .add-step-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        /* Add at end button */
+        .add-end-btn {
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            border: 1.5px dashed var(--border);
+            border-radius: var(--radius);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: -2px;
+        }
+        .add-end-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-bg);
+        }
+
+        /* Decision branch visual */
+        .branch-visual {
+            width: 100%;
+            max-width: 520px;
+            display: none;
+            padding: 4px 0;
+        }
+        .branch-visual.visible { display: flex; }
+        .branch-visual-inner {
+            width: 100%;
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            position: relative;
+        }
+        .branch-arm {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 4px 2px;
+        }
+        .branch-arm-label {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 100px;
+            margin-bottom: 4px;
+        }
+        .branch-arm-label.yes { background: var(--green-bg); color: var(--green); }
+        .branch-arm-label.no { background: var(--red-bg); color: var(--red); }
+        .branch-arm-target {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .branch-arm-line {
+            width: 1.5px;
+            height: 16px;
+            background: repeating-linear-gradient(
+                to bottom,
+                var(--border-strong) 0,
+                var(--border-strong) 3px,
+                transparent 3px,
+                transparent 6px
+            );
+        }
+        .branch-visual-fork {
+            position: absolute;
+            top: 0;
+            left: 25%;
+            right: 25%;
+            height: 6px;
+            border-top: 1.5px solid var(--border-strong);
+            border-left: 1.5px solid var(--border-strong);
+            border-right: 1.5px solid var(--border-strong);
+            border-radius: 4px 4px 0 0;
+        }
+
+        /* ============================================================
+           SUMMARY SIDEBAR
+           ============================================================ */
+        .summary-sidebar {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            position: sticky;
+            top: 80px;
+            align-self: start;
+        }
+        .summary-sidebar.active { display: flex; }
+
+        .sidebar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+        .sidebar-card h3 {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.2;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .role-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .role-tag {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 100px;
+            background: var(--bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .sidebar-empty {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 20px 0;
+            font-style: italic;
+        }
+
+        /* Automation potential bar */
+        .potential-bar {
+            height: 6px;
+            background: var(--bg);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .potential-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.6s ease;
+            background: linear-gradient(90deg, var(--green-accent), var(--teal-accent));
+        }
+        .potential-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--green);
+        }
+
+        /* Analyze button in sidebar */
+        .analyze-section {
+            padding-top: 8px;
+        }
+        .btn-analyze {
+            width: 100%;
+            font-size: 14px;
+            padding: 12px 20px;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-analyze:hover { background: #2C2926; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .btn-analyze:active { transform: translateY(0); }
+        .btn-analyze:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ============================================================
+           ANALYSIS RESULTS (Phase 2 placeholder)
+           ============================================================ */
+        .analysis-section {
+            display: none;
+            grid-column: 1 / -1;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+        .analysis-section.active { display: block; }
+
+        /* Health Score Ring */
+        .health-ring-container {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .health-ring {
+            width: 100px;
+            height: 100px;
+            flex-shrink: 0;
+        }
+        .health-ring svg { transform: rotate(-90deg); }
+        .health-ring-bg {
+            fill: none;
+            stroke: var(--border);
+            stroke-width: 6;
+        }
+        .health-ring-fill {
+            fill: none;
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease, stroke 0.5s ease;
+        }
+        .health-ring-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 22px;
+            font-weight: 600;
+            fill: var(--text);
+        }
+        .health-ring-label {
+            font-size: 9px;
+            fill: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .health-meta h2 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        .health-meta p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Insight Cards */
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .insight-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+        .insight-card.bottleneck { border-left: 3px solid var(--red-accent); }
+        .insight-card.opportunity { border-left: 3px solid var(--green-accent); }
+        .insight-card.pattern { border-left: 3px solid var(--amber-accent); }
+        .insight-card.info { border-left: 3px solid var(--blue-accent); }
+        .insight-type {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 6px;
+        }
+        .insight-card.bottleneck .insight-type { color: var(--red); }
+        .insight-card.opportunity .insight-type { color: var(--green); }
+        .insight-card.pattern .insight-type { color: var(--amber); }
+        .insight-card.info .insight-type { color: var(--blue); }
+        .insight-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .insight-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Time breakdown */
+        .time-breakdown {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .time-breakdown h3 {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .time-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        .time-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 500;
+        }
+        .time-stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* ============================================================
+           OUTPUT SECTION (Phase 2 placeholder)
+           ============================================================ */
+        .output-section {
+            display: none;
+            grid-column: 1 / -1;
+        }
+        .output-section.active { display: block; }
+
+        /* Tier tabs */
+        .tier-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        .tier-tab {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+        }
+        .tier-tab:hover { color: var(--text); }
+        .tier-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tier-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            position: relative;
+        }
+        .tier-content pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--text);
+        }
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+        }
+        .copy-btn.copied { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+
+        /* ============================================================
+           FLOWCHART OUTPUT (Phase 2)
+           ============================================================ */
+        .flowchart-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+        .flowchart-container svg {
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* ============================================================
+           MODALS
+           ============================================================ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(28, 25, 23, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .modal-overlay.visible { display: flex; }
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            width: 100%;
+            max-width: 480px;
+            max-height: 85vh;
+            overflow: auto;
+            animation: modalEnter 0.25s ease;
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 0;
+        }
+        .modal-header h2 { font-size: 20px; }
+        .modal-close {
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            border: none; background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+        .modal-close:hover { background: var(--bg); color: var(--text); }
+        .modal-body { padding: 20px 24px 24px; }
+
+        /* Template modal */
+        .template-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .template-list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .template-list-item:hover {
+            border-color: var(--accent);
+            background: var(--accent-bg);
+        }
+        .tli-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .tli-info h4 {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .tli-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Saved workflows modal */
+        .saved-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .saved-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .saved-item:hover { border-color: var(--accent); background: var(--accent-bg); }
+        .saved-item-info h4 { font-size: 14px; font-weight: 500; }
+        .saved-item-info p { font-size: 11px; color: var(--text-muted); }
+        .saved-item-actions { display: flex; gap: 4px; }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 10px 20px;
+            background: var(--text);
+            color: var(--bg);
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            z-index: 300;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+        }
+        .toast.visible { transform: translateX(-50%) translateY(0); }
+
+        /* ============================================================
+           LLM ASSIST BAR
+           ============================================================ */
+        .llm-assist-bar {
+            max-width: 520px;
+            margin: 0 auto 16px;
+            width: 100%;
+        }
+        .llm-assist-inner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+        .llm-assist-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            color: var(--text);
+            outline: none;
+            min-width: 0;
+        }
+        .llm-assist-input::placeholder { color: var(--text-muted); }
+        .llm-assist-input:disabled { opacity: 0.6; }
+        .llm-assist-btn {
+            padding: 5px 12px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .llm-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 100px;
+            background: var(--bg);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .llm-badge.connected {
+            background: var(--green-bg);
+            color: var(--green);
+            border-color: var(--green-border);
+        }
+        .llm-assist-bar.loading .llm-assist-btn {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* Settings security note */
+        .settings-security-note {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: var(--green-bg);
+            border: 1px solid var(--green-border);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--green);
+        }
+
+        /* ============================================================
+           ANIMATIONS
+           ============================================================ */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes cardEnter {
+            from { opacity: 0; transform: translateY(8px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes modalEnter {
+            from { opacity: 0; transform: scale(0.95) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Staggered entrance for template cards */
+        .step-card:nth-child(1) { animation-delay: 0s; }
+        .step-card:nth-child(2) { animation-delay: 0.04s; }
+        .step-card:nth-child(3) { animation-delay: 0.08s; }
+        .step-card:nth-child(4) { animation-delay: 0.12s; }
+        .step-card:nth-child(5) { animation-delay: 0.16s; }
+        .step-card:nth-child(6) { animation-delay: 0.20s; }
+        .step-card:nth-child(7) { animation-delay: 0.24s; }
+        .step-card:nth-child(8) { animation-delay: 0.28s; }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 840px) {
+            .app-layout {
+                grid-template-columns: 1fr;
+                padding: 16px;
+            }
+            .summary-sidebar {
+                position: static;
+                order: -1;
+            }
+            .summary-sidebar .sidebar-card { padding: 16px; }
+            .stat-grid { grid-template-columns: repeat(4, 1fr); }
+            .template-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 520px) {
+            .topbar-inner { height: 48px; }
+            .topbar-brand { font-size: 17px; }
+            .workflow-name-input { min-width: 100px; font-size: 13px; }
+            .step-header { padding: 10px 12px; gap: 8px; }
+            .step-badges { display: none; }
+            .stat-grid { grid-template-columns: 1fr 1fr; }
+            .field-row { grid-template-columns: 1fr; }
+            .time-stats { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+         TOPBAR
+         ============================================================ -->
+    <nav class="topbar">
+        <div class="topbar-inner">
+            <div class="topbar-left">
+                <div class="topbar-brand">Workflow<span>Analyzer</span></div>
+                <div class="topbar-divider"></div>
+                <input type="text" class="workflow-name-input" id="workflowNameInput" placeholder="Untitled Workflow" spellcheck="false">
+            </div>
+            <div class="topbar-right">
+                <button class="btn btn-ghost" id="btnTemplates" title="Load template">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Templates
+                </button>
+                <button class="btn btn-ghost" id="btnSaved" title="Saved workflows">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Saved
+                </button>
+                <button class="btn" id="btnSave" title="Save current workflow">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Save
+                </button>
+                <button class="btn btn-icon btn-ghost" id="btnSettings" title="Settings">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ============================================================
+         MAIN APP
+         ============================================================ -->
+    <main class="app-layout">
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+            <h1>Map your workflow.<br><em>See where you're wasting time.</em></h1>
+            <p>Build your workflow step by step, then get AI-ready insights on bottlenecks, automation potential, and time savings.</p>
+
+            <div class="template-grid" id="templateGrid">
+                <!-- Templates render here -->
+            </div>
+
+            <div class="empty-divider">or</div>
+
+            <button class="btn btn-lg" id="btnStartFresh">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Start from scratch
+            </button>
+        </div>
+
+        <!-- Tree Area -->
+        <div class="tree-area" id="treeArea">
+            <!-- LLM Assist Bar -->
+            <div class="llm-assist-bar" id="llmAssistBar">
+                <div class="llm-assist-inner">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--accent)"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    <input type="text" class="llm-assist-input" id="llmAssistInput"
+                        placeholder="Describe your workflow in a sentence or two... (requires API key in Settings)"
+                        disabled>
+                    <button class="btn btn-primary llm-assist-btn" id="llmAssistBtn" disabled>Generate Steps</button>
+                    <span class="llm-badge" id="llmBadge">No API key</span>
+                </div>
+            </div>
+            <div class="tree-container" id="treeContainer">
+                <!-- Step cards render here -->
+            </div>
+            <div style="text-align:center; padding: 8px 0;">
+                <button class="btn-analyze" id="btnAnalyze" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    Analyze Workflow
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Sidebar -->
+        <aside class="summary-sidebar" id="summarySidebar">
+            <div class="sidebar-card">
+                <h3>Workflow Summary</h3>
+                <div id="sidebarContent">
+                    <div class="sidebar-empty">Add steps to see summary</div>
+                </div>
+            </div>
+            <div class="sidebar-card">
+                <h3>AI Automation Potential</h3>
+                <div id="sidebarPotential">
+                    <div class="sidebar-empty">Add steps with work types to estimate</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Analysis Results (Phase 2) -->
+        <section class="analysis-section" id="analysisSection">
+            <!-- Rendered by AnalysisEngine -->
+        </section>
+
+        <!-- Output Section (Phase 2) -->
+        <section class="output-section" id="outputSection">
+            <!-- Rendered by OutputGenerator -->
+        </section>
+    </main>
+
+    <!-- ============================================================
+         MODALS
+         ============================================================ -->
+
+    <!-- Templates Modal -->
+    <div class="modal-overlay" id="modalTemplates">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Load a Template</h2>
+                <button class="modal-close" onclick="App.closeModal('modalTemplates')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Start with a pre-built workflow and customize it to match yours.</p>
+                <div class="template-list" id="templateList">
+                    <!-- Rendered by TemplateLibrary -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Saved Workflows Modal -->
+    <div class="modal-overlay" id="modalSaved">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Saved Workflows</h2>
+                <button class="modal-close" onclick="App.closeModal('modalSaved')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="savedList">
+                    <!-- Rendered by StorageManager -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="modalSettings">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="modal-close" onclick="App.closeModal('modalSettings')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3 style="font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;margin-bottom:12px;">LLM Provider (Optional)</h3>
+                    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Connect an AI provider to enable natural language workflow input and enhanced analysis. Your API key stays in your browser and is never stored.</p>
+
+                    <div class="field-group" style="margin-bottom:12px;">
+                        <label class="field-label">Provider</label>
+                        <select class="field-select" id="settingsProvider" onchange="App.onProviderChange()">
+                            <option value="none">None (tool works fully without AI)</option>
+                            <option value="openai">OpenAI (GPT-4o, GPT-4o-mini)</option>
+                            <option value="groq">Groq (Llama 3.3, Mixtral)</option>
+                            <option value="anthropic">Anthropic (requires proxy)</option>
+                        </select>
+                    </div>
+
+                    <div id="settingsKeyGroup" style="display:none;">
+                        <div class="field-group" style="margin-bottom:12px;">
+                            <label class="field-label">API Key</label>
+                            <input type="password" class="field-input" id="settingsApiKey" placeholder="sk-...">
+                        </div>
+
+                        <div class="field-group" style="margin-bottom:12px;">
+                            <label class="field-label">Model</label>
+                            <select class="field-select" id="settingsModel"></select>
+                        </div>
+
+                        <div id="settingsProxyGroup" style="display:none;">
+                            <div class="field-group" style="margin-bottom:12px;">
+                                <label class="field-label">Proxy URL (Anthropic only)</label>
+                                <input type="text" class="field-input" id="settingsProxy" placeholder="https://your-proxy.workers.dev">
+                                <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">Anthropic API doesn't support direct browser requests. You need a CORS proxy.</p>
+                            </div>
+                        </div>
+
+                        <div style="display:flex;gap:8px;margin-bottom:12px;">
+                            <button class="btn" id="settingsTestBtn" onclick="App.testConnection()">Test Connection</button>
+                            <span id="settingsTestResult" style="font-size:13px;display:flex;align-items:center;"></span>
+                        </div>
+                    </div>
+
+                    <div class="settings-security-note">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        Your API key stays in your browser memory only. Never stored or sent elsewhere.
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:16px;border-top:1px solid var(--border);margin-top:16px;">
+                    <button class="btn" onclick="App.closeModal('modalSettings')">Cancel</button>
+                    <button class="btn btn-primary" onclick="App.saveSettings()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ============================================================
+         JAVASCRIPT
+         ============================================================ -->
+    <script>
+    // ============================================================
+    // UTILITY
+    // ============================================================
+    function uuid() {
+        return 'xxxx-xxxx'.replace(/x/g, () => ((Math.random() * 16) | 0).toString(16));
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function formatTime(minutes) {
+        if (!minutes || minutes <= 0) return '--';
+        if (minutes < 60) return minutes + 'm';
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }
+
+    function frequencyMultiplier(freq) {
+        const map = {
+            'daily': 5, '2_per_week': 2, '3_per_week': 3,
+            'weekly': 1, 'biweekly': 0.5, 'monthly': 0.23, 'quarterly': 0.077
+        };
+        return map[freq] || 1;
+    }
+
+    function frequencyLabel(freq) {
+        const map = {
+            'daily': 'Daily', '2_per_week': '2x/week', '3_per_week': '3x/week',
+            'weekly': 'Weekly', 'biweekly': 'Biweekly', 'monthly': 'Monthly', 'quarterly': 'Quarterly'
+        };
+        return map[freq] || freq;
+    }
+
+    function workTypeLabel(wt) {
+        const map = {
+            'manual_data': 'Manual/Data Entry', 'creative': 'Creative',
+            'review': 'Review', 'communication': 'Communication',
+            'research': 'Research', 'decision_making': 'Decision Making',
+            'technical': 'Technical', 'other': 'Other'
+        };
+        return map[wt] || wt || 'Not set';
+    }
+
+    const AI_READINESS = {
+        'manual_data': 0.90, 'research': 0.85, 'creative': 0.70,
+        'review': 0.50, 'communication': 0.40,
+        'decision_making': 0.20, 'technical': 0.15, 'other': 0.10
+    };
+
+    // ============================================================
+    // WORKFLOW MODEL (State Manager)
+    // ============================================================
+    class WorkflowModel {
+        constructor() {
+            this.data = this._defaultModel();
+            this.listeners = [];
+        }
+
+        _defaultModel() {
+            return {
+                version: '1.0',
+                workflow: {
+                    id: 'wf-' + uuid(),
+                    name: '',
+                    description: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                },
+                steps: [],
+                analysis: null,
+                settings: { llmProvider: 'none', llmModel: '' }
+            };
+        }
+
+        // Mutations
+        addStep(step, afterIndex = null) {
+            const newStep = {
+                id: 'step-' + uuid(),
+                type: 'action',
+                name: '',
+                description: '',
+                workType: null,
+                assignee: '',
+                timeMinutes: 0,
+                frequency: 'weekly',
+                next: [],
+                branches: null,
+                order: 0,
+                ...step
+            };
+
+            if (afterIndex !== null && afterIndex >= 0 && afterIndex < this.data.steps.length) {
+                this.data.steps.splice(afterIndex + 1, 0, newStep);
+            } else {
+                this.data.steps.push(newStep);
+            }
+
+            this._reorder();
+            this._touch();
+            this._notify();
+            return newStep;
+        }
+
+        updateStep(stepId, changes) {
+            const step = this.getStep(stepId);
+            if (!step) return;
+            Object.assign(step, changes);
+            this._touch();
+            this._notify();
+        }
+
+        removeStep(stepId) {
+            const idx = this.data.steps.findIndex(s => s.id === stepId);
+            if (idx === -1) return;
+            this.data.steps.splice(idx, 1);
+            // Clean up any branch references to this step
+            this.data.steps.forEach(s => {
+                if (s.branches) {
+                    if (s.branches.yes && s.branches.yes.targetStepId === stepId) s.branches.yes.targetStepId = '';
+                    if (s.branches.no && s.branches.no.targetStepId === stepId) s.branches.no.targetStepId = '';
+                }
+            });
+            this._reorder();
+            this._touch();
+            this._notify();
+        }
+
+        convertToDecision(stepId) {
+            const step = this.getStep(stepId);
+            if (!step) return;
+            if (step.type === 'decision') {
+                step.type = 'action';
+                step.branches = null;
+            } else {
+                step.type = 'decision';
+                step.workType = step.workType || 'decision_making';
+                step.branches = {
+                    yes: { label: 'Yes', targetStepId: '' },
+                    no: { label: 'No', targetStepId: '' }
+                };
+            }
+            this._touch();
+            this._notify();
+        }
+
+        setWorkflowName(name) {
+            this.data.workflow.name = name;
+            this._touch();
+            // Don't notify for name changes to avoid re-render flickering
+        }
+
+        loadSteps(steps) {
+            this.data.steps = steps.map((s, i) => ({
+                id: s.id || 'step-' + uuid(),
+                type: s.type || 'action',
+                name: s.name || '',
+                description: s.description || '',
+                workType: s.workType || null,
+                assignee: s.assignee || '',
+                timeMinutes: s.timeMinutes || 0,
+                frequency: s.frequency || 'weekly',
+                next: s.next || [],
+                branches: s.branches || null,
+                order: i
+            }));
+            this._touch();
+            this._notify();
+        }
+
+        // Queries
+        getStep(stepId) {
+            return this.data.steps.find(s => s.id === stepId);
+        }
+
+        getSteps() {
+            return [...this.data.steps].sort((a, b) => a.order - b.order);
+        }
+
+        getStepCount() { return this.data.steps.length; }
+
+        getDecisionCount() { return this.data.steps.filter(s => s.type === 'decision').length; }
+
+        getRoles() {
+            const roles = new Set();
+            this.data.steps.forEach(s => { if (s.assignee) roles.add(s.assignee); });
+            return [...roles];
+        }
+
+        getWeeklyMinutes() {
+            return this.data.steps.reduce((sum, s) => {
+                if (s.timeMinutes > 0) {
+                    return sum + (s.timeMinutes * frequencyMultiplier(s.frequency));
+                }
+                return sum;
+            }, 0);
+        }
+
+        getAIAutomationPotential() {
+            const stepsWithType = this.data.steps.filter(s => s.workType && s.type !== 'start' && s.type !== 'end');
+            if (stepsWithType.length === 0) return 0;
+            const totalReadiness = stepsWithType.reduce((sum, s) => sum + (AI_READINESS[s.workType] || 0.1), 0);
+            return Math.round((totalReadiness / stepsWithType.length) * 100);
+        }
+
+        toJSON() {
+            return JSON.parse(JSON.stringify(this.data));
+        }
+
+        fromJSON(json) {
+            this.data = json;
+            this._notify();
+        }
+
+        reset() {
+            this.data = this._defaultModel();
+            this._notify();
+        }
+
+        // Internal
+        _reorder() {
+            this.data.steps.forEach((s, i) => { s.order = i; });
+            // Update next pointers
+            this.data.steps.forEach((s, i) => {
+                if (s.type !== 'decision' && i < this.data.steps.length - 1) {
+                    s.next = [this.data.steps[i + 1].id];
+                } else if (s.type !== 'decision') {
+                    s.next = [];
+                }
+            });
+        }
+
+        _touch() {
+            this.data.workflow.updatedAt = new Date().toISOString();
+        }
+
+        onChange(callback) {
+            this.listeners.push(callback);
+        }
+
+        _notify() {
+            this.listeners.forEach(cb => cb(this));
+        }
+    }
+
+    // ============================================================
+    // TEMPLATE LIBRARY
+    // ============================================================
+    const TemplateLibrary = {
+        templates: [
+            {
+                id: 'content-approval',
+                name: 'Content Approval Pipeline',
+                description: '6 steps - Marketing team content workflow',
+                icon: '&#x1F4DD;',
+                iconBg: 'var(--blue-bg)',
+                steps: [
+                    { type: 'start', name: 'Content brief arrives', description: 'Marketing manager sends topic, audience, key messages', workType: null, assignee: 'Marketing Manager', timeMinutes: 10, frequency: '3_per_week' },
+                    { type: 'action', name: 'Writer creates draft', description: 'First draft in Google Docs based on the brief', workType: 'creative', assignee: 'Content Writer', timeMinutes: 120, frequency: '3_per_week' },
+                    { type: 'decision', name: 'Manager reviews draft', description: 'VP reviews for tone, accuracy, and campaign alignment', workType: 'review', assignee: 'Marketing Manager', timeMinutes: 45, frequency: '3_per_week', branches: { yes: { label: 'Approved', targetStepId: '' }, no: { label: 'Needs revision', targetStepId: '' } } },
+                    { type: 'action', name: 'Designer creates visuals', description: 'Graphics, headers, social assets created in Figma', workType: 'creative', assignee: 'Designer', timeMinutes: 60, frequency: '3_per_week' },
+                    { type: 'action', name: 'Schedule and publish', description: 'Content loaded into CMS, scheduled across channels', workType: 'manual_data', assignee: 'Content Coordinator', timeMinutes: 20, frequency: '3_per_week' },
+                    { type: 'end', name: 'Content live', description: 'Published across all channels, shared with stakeholders', workType: null, assignee: '', timeMinutes: 0, frequency: '3_per_week' }
+                ]
+            },
+            {
+                id: 'customer-onboarding',
+                name: 'Customer Onboarding',
+                description: '7 steps - New customer setup flow',
+                icon: '&#x1F91D;',
+                iconBg: 'var(--green-bg)',
+                steps: [
+                    { type: 'start', name: 'Deal closed, handoff from Sales', description: 'Sales sends signed contract + customer info to CS team', workType: null, assignee: 'Sales Rep', timeMinutes: 15, frequency: 'weekly' },
+                    { type: 'action', name: 'Create customer account', description: 'Set up account in CRM, billing system, and product', workType: 'manual_data', assignee: 'CS Ops', timeMinutes: 30, frequency: 'weekly' },
+                    { type: 'action', name: 'Send welcome email sequence', description: 'Trigger onboarding email flow with setup instructions', workType: 'communication', assignee: 'CS Manager', timeMinutes: 15, frequency: 'weekly' },
+                    { type: 'action', name: 'Schedule kickoff call', description: 'Book intro call with customer success manager', workType: 'communication', assignee: 'CS Manager', timeMinutes: 20, frequency: 'weekly' },
+                    { type: 'action', name: 'Data migration/import', description: 'Import customer data from previous system', workType: 'manual_data', assignee: 'CS Ops', timeMinutes: 90, frequency: 'weekly' },
+                    { type: 'decision', name: 'Customer setup verified', description: 'Verify all data imported correctly, test key workflows', workType: 'review', assignee: 'CS Manager', timeMinutes: 30, frequency: 'weekly', branches: { yes: { label: 'All good', targetStepId: '' }, no: { label: 'Issues found', targetStepId: '' } } },
+                    { type: 'end', name: 'Customer active', description: 'Customer is live and using the product', workType: null, assignee: '', timeMinutes: 0, frequency: 'weekly' }
+                ]
+            },
+            {
+                id: 'hiring-pipeline',
+                name: 'Hiring Pipeline',
+                description: '7 steps - Recruit to offer flow',
+                icon: '&#x1F465;',
+                iconBg: 'var(--purple-bg)',
+                steps: [
+                    { type: 'start', name: 'Job requisition approved', description: 'Hiring manager submits req, finance approves headcount', workType: null, assignee: 'Hiring Manager', timeMinutes: 30, frequency: 'monthly' },
+                    { type: 'action', name: 'Post job and source candidates', description: 'Write job description, post to boards, activate sourcing', workType: 'creative', assignee: 'Recruiter', timeMinutes: 120, frequency: 'monthly' },
+                    { type: 'action', name: 'Screen resumes', description: 'Review incoming applications, shortlist top candidates', workType: 'review', assignee: 'Recruiter', timeMinutes: 180, frequency: 'weekly' },
+                    { type: 'action', name: 'Phone screen candidates', description: '15-minute calls with shortlisted candidates', workType: 'communication', assignee: 'Recruiter', timeMinutes: 60, frequency: 'weekly' },
+                    { type: 'action', name: 'Interview rounds', description: 'Technical + culture fit interviews with team', workType: 'decision_making', assignee: 'Hiring Panel', timeMinutes: 120, frequency: 'biweekly' },
+                    { type: 'decision', name: 'Hiring decision', description: 'Team debrief, scorecard review, final decision', workType: 'decision_making', assignee: 'Hiring Manager', timeMinutes: 45, frequency: 'monthly', branches: { yes: { label: 'Extend offer', targetStepId: '' }, no: { label: 'Pass', targetStepId: '' } } },
+                    { type: 'end', name: 'Offer extended', description: 'Offer letter sent, negotiation if needed', workType: null, assignee: 'Recruiter', timeMinutes: 30, frequency: 'monthly' }
+                ]
+            },
+            {
+                id: 'bug-triage',
+                name: 'Bug Triage & Fix',
+                description: '5 steps - Engineering bug flow',
+                icon: '&#x1F41B;',
+                iconBg: 'var(--amber-bg)',
+                steps: [
+                    { type: 'start', name: 'Bug reported', description: 'Customer or QA files a bug report with reproduction steps', workType: null, assignee: 'Support', timeMinutes: 15, frequency: 'daily' },
+                    { type: 'decision', name: 'Triage and prioritize', description: 'Assess severity, impact, and assign priority level', workType: 'decision_making', assignee: 'Engineering Lead', timeMinutes: 10, frequency: 'daily', branches: { yes: { label: 'Fix now', targetStepId: '' }, no: { label: 'Backlog', targetStepId: '' } } },
+                    { type: 'action', name: 'Investigate and fix', description: 'Developer reproduces, identifies root cause, writes fix', workType: 'technical', assignee: 'Developer', timeMinutes: 120, frequency: 'daily' },
+                    { type: 'action', name: 'Code review and test', description: 'PR review, automated tests pass, QA verification', workType: 'review', assignee: 'Engineering Lead', timeMinutes: 30, frequency: 'daily' },
+                    { type: 'end', name: 'Fix deployed', description: 'Merged to main, deployed to production, customer notified', workType: 'manual_data', assignee: 'Developer', timeMinutes: 15, frequency: 'daily' }
+                ]
+            }
+        ],
+
+        getAll() { return this.templates; },
+        getById(id) { return this.templates.find(t => t.id === id); }
+    };
+
+    // ============================================================
+    // STORAGE MANAGER
+    // ============================================================
+    const STORAGE_KEY = 'workflow-analyzer-saved';
+
+    const StorageManager = {
+        save(model) {
+            const saved = this.listSaved();
+            const name = model.data.workflow.name || 'Untitled Workflow';
+            const existing = saved.findIndex(s => s.id === model.data.workflow.id);
+
+            const entry = {
+                id: model.data.workflow.id,
+                name: name,
+                stepCount: model.getStepCount(),
+                savedAt: new Date().toISOString(),
+                data: model.toJSON()
+            };
+
+            if (existing >= 0) {
+                saved[existing] = entry;
+            } else {
+                saved.push(entry);
+            }
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+            return entry;
+        },
+
+        listSaved() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            } catch {
+                return [];
+            }
+        },
+
+        load(id) {
+            const saved = this.listSaved();
+            const entry = saved.find(s => s.id === id);
+            return entry ? entry.data : null;
+        },
+
+        deleteSaved(id) {
+            const saved = this.listSaved().filter(s => s.id !== id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        },
+
+        // Auto-save current session
+        autoSave(model) {
+            localStorage.setItem(STORAGE_KEY + '-autosave', JSON.stringify(model.toJSON()));
+        },
+
+        loadAutoSave() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY + '-autosave');
+                return data ? JSON.parse(data) : null;
+            } catch {
+                return null;
+            }
+        },
+
+        clearAutoSave() {
+            localStorage.removeItem(STORAGE_KEY + '-autosave');
+        }
+    };
+
+    // ============================================================
+    // TREE BUILDER (UI)
+    // ============================================================
+    let expandedStepId = null;
+
+    const TreeBuilder = {
+        render(model) {
+            const container = document.getElementById('treeContainer');
+            const steps = model.getSteps();
+
+            // Build HTML
+            let html = '';
+            steps.forEach((step, index) => {
+                // Step card
+                html += this._renderCard(step, index, model);
+
+                // Decision branch visual
+                if (step.type === 'decision' && step.branches) {
+                    html += this._renderBranchVisual(step, model);
+                }
+
+                // Connector between cards
+                if (index < steps.length - 1) {
+                    html += this._renderConnector(index);
+                }
+            });
+
+            // Add step button at the end
+            html += `
+                <button class="add-end-btn" onclick="App.addStep()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add step
+                </button>
+            `;
+
+            container.innerHTML = html;
+
+            // Update analyze button state
+            document.getElementById('btnAnalyze').disabled = steps.length < 2;
+        },
+
+        _renderCard(step, index, model) {
+            const isExpanded = expandedStepId === step.id;
+            const typeClass = `type-${step.type}`;
+            const expandedClass = isExpanded ? 'expanded' : '';
+
+            const assigneeBadge = step.assignee
+                ? `<span class="step-badge assignee">${escapeHtml(step.assignee)}</span>` : '';
+            const timeBadge = step.timeMinutes > 0
+                ? `<span class="step-badge time">${formatTime(step.timeMinutes)}</span>` : '';
+            const nameDisplay = step.name
+                ? escapeHtml(step.name)
+                : '<span class="step-name placeholder">Click to name this step</span>';
+
+            const allSteps = model.getSteps();
+            const isDecision = step.type === 'decision';
+
+            // Build target options for branch selects
+            let targetOptions = '<option value="">-- continue --</option>';
+            allSteps.forEach(s => {
+                if (s.id !== step.id) {
+                    const selectedYes = step.branches && step.branches.yes && step.branches.yes.targetStepId === s.id ? 'selected' : '';
+                    const selectedNo = step.branches && step.branches.no && step.branches.no.targetStepId === s.id ? 'selected' : '';
+                    targetOptions += `<option value="${s.id}" ${selectedYes || selectedNo}>${escapeHtml(s.name || 'Step ' + (s.order + 1))}</option>`;
+                }
+            });
+
+            // Build yes/no target options separately
+            let yesTargetOpts = '<option value="">Next step</option>';
+            let noTargetOpts = '<option value="">Next step</option>';
+            allSteps.forEach(s => {
+                if (s.id !== step.id) {
+                    const label = escapeHtml(s.name || 'Step ' + (s.order + 1));
+                    const selY = step.branches && step.branches.yes && step.branches.yes.targetStepId === s.id ? 'selected' : '';
+                    const selN = step.branches && step.branches.no && step.branches.no.targetStepId === s.id ? 'selected' : '';
+                    yesTargetOpts += `<option value="${s.id}" ${selY}>${label}</option>`;
+                    noTargetOpts += `<option value="${s.id}" ${selN}>${label}</option>`;
+                }
+            });
+
+            return `
+                <div class="step-card ${typeClass} ${expandedClass}" data-step-id="${step.id}" style="animation-delay:${index * 0.04}s">
+                    <div class="step-header" onclick="App.toggleStep('${step.id}')">
+                        <span class="step-type-dot"></span>
+                        <span class="step-order">${index + 1}</span>
+                        <span class="step-name">${nameDisplay}</span>
+                        ${assigneeBadge}
+                        ${timeBadge}
+                        <span class="step-expand-icon">&#x25BC;</span>
+                    </div>
+                    <div class="step-details">
+                        <div class="step-details-inner">
+                            <div class="field-group full">
+                                <label class="field-label">Step Name</label>
+                                <input type="text" class="field-input" value="${escapeHtml(step.name)}"
+                                    placeholder="What happens at this step?"
+                                    onchange="App.updateStep('${step.id}', 'name', this.value)"
+                                    onclick="event.stopPropagation()">
+                            </div>
+                            <div class="field-group full">
+                                <label class="field-label">Description</label>
+                                <textarea class="field-textarea" placeholder="Details about what happens..."
+                                    onchange="App.updateStep('${step.id}', 'description', this.value)"
+                                    onclick="event.stopPropagation()">${escapeHtml(step.description)}</textarea>
+                            </div>
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label class="field-label">Work Type</label>
+                                    <select class="field-select" onchange="App.updateStep('${step.id}', 'workType', this.value)" onclick="event.stopPropagation()">
+                                        <option value="">Not set</option>
+                                        <option value="manual_data" ${step.workType === 'manual_data' ? 'selected' : ''}>Manual / Data Entry</option>
+                                        <option value="creative" ${step.workType === 'creative' ? 'selected' : ''}>Creative</option>
+                                        <option value="review" ${step.workType === 'review' ? 'selected' : ''}>Review</option>
+                                        <option value="communication" ${step.workType === 'communication' ? 'selected' : ''}>Communication</option>
+                                        <option value="research" ${step.workType === 'research' ? 'selected' : ''}>Research</option>
+                                        <option value="decision_making" ${step.workType === 'decision_making' ? 'selected' : ''}>Decision Making</option>
+                                        <option value="technical" ${step.workType === 'technical' ? 'selected' : ''}>Technical</option>
+                                        <option value="other" ${step.workType === 'other' ? 'selected' : ''}>Other</option>
+                                    </select>
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Assigned To</label>
+                                    <input type="text" class="field-input" value="${escapeHtml(step.assignee)}"
+                                        placeholder="Role or person"
+                                        onchange="App.updateStep('${step.id}', 'assignee', this.value)"
+                                        onclick="event.stopPropagation()">
+                                </div>
+                            </div>
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label class="field-label">Time per Occurrence</label>
+                                    <div class="time-input-group">
+                                        <input type="number" class="field-input" min="0" value="${step.timeMinutes || ''}"
+                                            placeholder="0"
+                                            onchange="App.updateStep('${step.id}', 'timeMinutes', parseInt(this.value) || 0)"
+                                            onclick="event.stopPropagation()">
+                                        <span class="time-unit">min</span>
+                                    </div>
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Frequency</label>
+                                    <select class="field-select" onchange="App.updateStep('${step.id}', 'frequency', this.value)" onclick="event.stopPropagation()">
+                                        <option value="daily" ${step.frequency === 'daily' ? 'selected' : ''}>Daily</option>
+                                        <option value="2_per_week" ${step.frequency === '2_per_week' ? 'selected' : ''}>2x per week</option>
+                                        <option value="3_per_week" ${step.frequency === '3_per_week' ? 'selected' : ''}>3x per week</option>
+                                        <option value="weekly" ${step.frequency === 'weekly' ? 'selected' : ''}>Weekly</option>
+                                        <option value="biweekly" ${step.frequency === 'biweekly' ? 'selected' : ''}>Biweekly</option>
+                                        <option value="monthly" ${step.frequency === 'monthly' ? 'selected' : ''}>Monthly</option>
+                                        <option value="quarterly" ${step.frequency === 'quarterly' ? 'selected' : ''}>Quarterly</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            ${step.type !== 'start' && step.type !== 'end' ? `
+                            <div class="decision-toggle">
+                                <div class="toggle-switch ${isDecision ? 'active' : ''}" onclick="event.stopPropagation(); App.toggleDecision('${step.id}')"></div>
+                                <span class="toggle-label">This is a decision point</span>
+                            </div>
+                            ` : ''}
+
+                            ${isDecision ? `
+                            <div class="branch-config visible">
+                                <div class="branch-item">
+                                    <div class="branch-label-header">
+                                        <span class="dot yes"></span>
+                                        <span style="color:var(--green)">Yes Path</span>
+                                    </div>
+                                    <input type="text" class="field-input" style="margin-top:4px;font-size:13px;"
+                                        value="${escapeHtml(step.branches.yes.label)}"
+                                        placeholder="Label (e.g., Approved)"
+                                        onclick="event.stopPropagation()"
+                                        onchange="App.updateBranch('${step.id}', 'yes', 'label', this.value)">
+                                    <select class="branch-target-select" style="margin-top:4px;"
+                                        onclick="event.stopPropagation()"
+                                        onchange="App.updateBranch('${step.id}', 'yes', 'targetStepId', this.value)">
+                                        ${yesTargetOpts}
+                                    </select>
+                                </div>
+                                <div class="branch-item">
+                                    <div class="branch-label-header">
+                                        <span class="dot no"></span>
+                                        <span style="color:var(--red)">No Path</span>
+                                    </div>
+                                    <input type="text" class="field-input" style="margin-top:4px;font-size:13px;"
+                                        value="${escapeHtml(step.branches.no.label)}"
+                                        placeholder="Label (e.g., Rejected)"
+                                        onclick="event.stopPropagation()"
+                                        onchange="App.updateBranch('${step.id}', 'no', 'label', this.value)">
+                                    <select class="branch-target-select" style="margin-top:4px;"
+                                        onclick="event.stopPropagation()"
+                                        onchange="App.updateBranch('${step.id}', 'no', 'targetStepId', this.value)">
+                                        ${noTargetOpts}
+                                    </select>
+                                </div>
+                            </div>
+                            ` : ''}
+
+                            <div class="step-actions">
+                                <button class="btn-delete" onclick="event.stopPropagation(); App.removeStep('${step.id}')">
+                                    Delete step
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        },
+
+        _renderBranchVisual(step, model) {
+            const yesLabel = step.branches.yes.label || 'Yes';
+            const noLabel = step.branches.no.label || 'No';
+            const yesTarget = step.branches.yes.targetStepId ? model.getStep(step.branches.yes.targetStepId) : null;
+            const noTarget = step.branches.no.targetStepId ? model.getStep(step.branches.no.targetStepId) : null;
+            const yesTargetLabel = yesTarget ? escapeHtml(yesTarget.name || 'Step ' + (yesTarget.order + 1)) : 'next';
+            const noTargetLabel = noTarget ? escapeHtml(noTarget.name || 'Step ' + (noTarget.order + 1)) : 'next';
+
+            return `
+                <div class="branch-visual visible">
+                    <div class="branch-visual-inner">
+                        <div class="branch-visual-fork"></div>
+                        <div class="branch-arm">
+                            <div class="branch-arm-line"></div>
+                            <span class="branch-arm-label yes">${escapeHtml(yesLabel)}</span>
+                            <span class="branch-arm-target">&rarr; ${yesTargetLabel}</span>
+                        </div>
+                        <div class="branch-arm">
+                            <div class="branch-arm-line"></div>
+                            <span class="branch-arm-label no">${escapeHtml(noLabel)}</span>
+                            <span class="branch-arm-target">&rarr; ${noTargetLabel}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        },
+
+        _renderConnector(afterIndex) {
+            return `
+                <div class="connector">
+                    <div class="connector-line"></div>
+                    <button class="add-step-btn" onclick="App.addStepAfter(${afterIndex})" title="Insert step here">+</button>
+                </div>
+            `;
+        }
+    };
+
+    // ============================================================
+    // SUMMARY BAR (UI)
+    // ============================================================
+    const SummaryBar = {
+        render(model) {
+            const steps = model.getSteps();
+            const stepCount = model.getStepCount();
+            const decisionCount = model.getDecisionCount();
+            const roles = model.getRoles();
+            const weeklyMinutes = model.getWeeklyMinutes();
+            const aiPotential = model.getAIAutomationPotential();
+
+            // Main stats
+            const contentEl = document.getElementById('sidebarContent');
+            if (stepCount === 0) {
+                contentEl.innerHTML = '<div class="sidebar-empty">Add steps to see summary</div>';
+            } else {
+                let rolesHtml = '';
+                if (roles.length > 0) {
+                    rolesHtml = `
+                        <div style="margin-top:14px;">
+                            <div class="field-label" style="margin-bottom:6px;">Roles Involved</div>
+                            <div class="role-tags">
+                                ${roles.map(r => `<span class="role-tag">${escapeHtml(r)}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                contentEl.innerHTML = `
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span class="stat-value">${stepCount}</span>
+                            <span class="stat-label">Steps</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">${decisionCount}</span>
+                            <span class="stat-label">Decisions</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">${roles.length}</span>
+                            <span class="stat-label">Roles</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">${formatTime(weeklyMinutes)}</span>
+                            <span class="stat-label">Est. per week</span>
+                        </div>
+                    </div>
+                    ${rolesHtml}
+                `;
+            }
+
+            // AI potential
+            const potentialEl = document.getElementById('sidebarPotential');
+            const stepsWithType = steps.filter(s => s.workType && s.type !== 'start' && s.type !== 'end');
+
+            if (stepsWithType.length === 0) {
+                potentialEl.innerHTML = '<div class="sidebar-empty">Add steps with work types to estimate</div>';
+            } else {
+                const color = aiPotential >= 60 ? 'var(--green)' : aiPotential >= 30 ? 'var(--amber)' : 'var(--text-muted)';
+                potentialEl.innerHTML = `
+                    <span class="potential-value" style="color:${color}">${aiPotential}%</span>
+                    <span class="stat-label" style="margin-left:4px;">automatable with AI</span>
+                    <div class="potential-bar">
+                        <div class="potential-fill" style="width:${aiPotential}%"></div>
+                    </div>
+                `;
+            }
+        }
+    };
+
+    // ============================================================
+    // ANALYSIS ENGINE (Business Logic)
+    // ============================================================
+    const AnalysisEngine = {
+        analyze(model) {
+            const steps = model.getSteps();
+            if (steps.length < 2) return null;
+
+            const bottlenecks = this._detectBottlenecks(steps);
+            const aiReadiness = this._scoreAIReadiness(steps);
+            const time = this._calculateTime(steps);
+            const cost = this._estimateCost(time);
+            const antiPatterns = this._detectAntiPatterns(steps);
+            const healthScore = this._calculateHealthScore(steps, bottlenecks, antiPatterns);
+
+            return {
+                bottlenecks,
+                aiReadiness,
+                time,
+                cost,
+                antiPatterns,
+                healthScore,
+                stepCount: steps.length,
+                decisionCount: steps.filter(s => s.type === 'decision').length,
+                roles: model.getRoles()
+            };
+        },
+
+        _detectBottlenecks(steps) {
+            const bottlenecks = [];
+            const assigneeCounts = {};
+
+            // Count how many steps each person handles
+            steps.forEach(s => {
+                if (s.assignee) {
+                    assigneeCounts[s.assignee] = (assigneeCounts[s.assignee] || 0) + 1;
+                }
+            });
+
+            steps.forEach((step, idx) => {
+                const reasons = [];
+
+                // Single person handling multiple steps (>= 3)
+                if (step.assignee && assigneeCounts[step.assignee] >= 3) {
+                    reasons.push(`${step.assignee} handles ${assigneeCounts[step.assignee]} steps`);
+                }
+
+                // Decision steps with loop-back (review cycles)
+                if (step.type === 'decision' && step.branches) {
+                    const noTarget = step.branches.no ? step.branches.no.targetStepId : '';
+                    if (noTarget) {
+                        const targetStep = steps.find(s => s.id === noTarget);
+                        if (targetStep && targetStep.order < step.order) {
+                            reasons.push('Creates a review cycle (loops back to earlier step)');
+                        }
+                    }
+                }
+
+                // High time relative to workflow
+                const totalTime = steps.reduce((sum, s) => sum + (s.timeMinutes || 0), 0);
+                if (step.timeMinutes > 0 && totalTime > 0 && (step.timeMinutes / totalTime) > 0.3) {
+                    reasons.push(`Takes ${Math.round((step.timeMinutes / totalTime) * 100)}% of total workflow time`);
+                }
+
+                // Sequential chain - step depends on single prior and feeds single next
+                if (idx > 0 && idx < steps.length - 1 && step.type !== 'decision') {
+                    const isLinear = steps.every(s => !s.branches || s.type !== 'decision' ||
+                        (s.branches.yes && s.branches.yes.targetStepId !== step.id));
+                    if (isLinear && step.timeMinutes >= 60) {
+                        reasons.push('Sequential step taking 1+ hours with no parallel path');
+                    }
+                }
+
+                if (reasons.length > 0) {
+                    bottlenecks.push({ stepId: step.id, stepName: step.name, reasons });
+                }
+            });
+
+            return bottlenecks;
+        },
+
+        _scoreAIReadiness(steps) {
+            return steps
+                .filter(s => s.type !== 'start' && s.type !== 'end')
+                .map(s => ({
+                    stepId: s.id,
+                    stepName: s.name,
+                    workType: s.workType,
+                    score: AI_READINESS[s.workType] || 0.1,
+                    suggestion: this._getAISuggestion(s.workType)
+                }));
+        },
+
+        _getAISuggestion(workType) {
+            const suggestions = {
+                'manual_data': 'Automate with data extraction, form filling, or API integrations',
+                'research': 'Use AI-powered research assistants, automated data gathering',
+                'creative': 'AI can draft content, generate variations, accelerate ideation',
+                'review': 'AI can flag issues, check against guidelines, pre-screen',
+                'communication': 'Auto-draft emails, summaries, meeting prep',
+                'decision_making': 'AI can surface data and recommendations, but humans decide',
+                'technical': 'AI can assist with code, testing, debugging, documentation',
+                'other': 'Evaluate if this step can be broken into more specific work types'
+            };
+            return suggestions[workType] || suggestions['other'];
+        },
+
+        _calculateTime(steps) {
+            let weeklyMinutes = 0;
+            let aiAutomatableMinutes = 0;
+
+            steps.forEach(s => {
+                if (s.timeMinutes > 0) {
+                    const weekly = s.timeMinutes * frequencyMultiplier(s.frequency);
+                    weeklyMinutes += weekly;
+                    const readiness = AI_READINESS[s.workType] || 0.1;
+                    aiAutomatableMinutes += weekly * readiness;
+                }
+            });
+
+            return {
+                weeklyMinutes: Math.round(weeklyMinutes),
+                annualHours: Math.round((weeklyMinutes * 52) / 60),
+                aiAutomatableMinutes: Math.round(aiAutomatableMinutes),
+                aiAutomatableHours: Math.round((aiAutomatableMinutes * 52) / 60),
+                savingsPercent: weeklyMinutes > 0 ? Math.round((aiAutomatableMinutes / weeklyMinutes) * 100) : 0
+            };
+        },
+
+        _estimateCost(time) {
+            const hourlyRate = 48; // Average burdened rate
+            return {
+                annualCost: Math.round(time.annualHours * hourlyRate),
+                potentialSavings: Math.round(time.aiAutomatableHours * hourlyRate),
+                hourlyRate
+            };
+        },
+
+        _detectAntiPatterns(steps) {
+            const patterns = [];
+            const assigneeCounts = {};
+            steps.forEach(s => {
+                if (s.assignee) assigneeCounts[s.assignee] = (assigneeCounts[s.assignee] || 0) + 1;
+            });
+
+            // Single reviewer bottleneck
+            const reviewSteps = steps.filter(s => s.workType === 'review' || s.type === 'decision');
+            if (reviewSteps.length > 1) {
+                const reviewers = {};
+                reviewSteps.forEach(s => { if (s.assignee) reviewers[s.assignee] = (reviewers[s.assignee] || 0) + 1; });
+                Object.entries(reviewers).forEach(([name, count]) => {
+                    if (count >= 2) {
+                        patterns.push({
+                            type: 'bottleneck',
+                            title: 'Single Reviewer Bottleneck',
+                            description: `${name} is the reviewer/decision-maker on ${count} steps. If they're unavailable, the entire workflow stalls.`,
+                            severity: 'high'
+                        });
+                    }
+                });
+            }
+
+            // No parallel paths (purely sequential)
+            const hasDecision = steps.some(s => s.type === 'decision');
+            if (steps.length >= 5 && !hasDecision) {
+                patterns.push({
+                    type: 'pattern',
+                    title: 'Purely Sequential Workflow',
+                    description: 'Every step waits for the previous one. Consider which steps could happen in parallel.',
+                    severity: 'medium'
+                });
+            }
+
+            // Excessive steps
+            if (steps.length > 10) {
+                patterns.push({
+                    type: 'pattern',
+                    title: 'Complex Workflow',
+                    description: `${steps.length} steps is above average. Consider whether any steps can be combined or eliminated.`,
+                    severity: 'low'
+                });
+            }
+
+            // Missing roles
+            const noAssignee = steps.filter(s => !s.assignee && s.type !== 'start' && s.type !== 'end');
+            if (noAssignee.length >= 2) {
+                patterns.push({
+                    type: 'info',
+                    title: 'Unassigned Steps',
+                    description: `${noAssignee.length} steps have no assigned role. This can indicate unclear ownership and dropped balls.`,
+                    severity: 'medium'
+                });
+            }
+
+            // Missing time data
+            const noTime = steps.filter(s => !s.timeMinutes && s.type !== 'start' && s.type !== 'end');
+            if (noTime.length > steps.length * 0.5) {
+                patterns.push({
+                    type: 'info',
+                    title: 'Missing Time Estimates',
+                    description: 'Most steps lack time data. Adding time estimates will make the cost analysis much more accurate.',
+                    severity: 'low'
+                });
+            }
+
+            // High automation potential not being used
+            const highAISteps = steps.filter(s => (AI_READINESS[s.workType] || 0) >= 0.7);
+            if (highAISteps.length >= 2) {
+                patterns.push({
+                    type: 'opportunity',
+                    title: 'High Automation Potential',
+                    description: `${highAISteps.length} steps (${highAISteps.map(s => s.name || 'unnamed').join(', ')}) are highly automatable with AI tools.`,
+                    severity: 'high'
+                });
+            }
+
+            return patterns;
+        },
+
+        _calculateHealthScore(steps, bottlenecks, antiPatterns) {
+            let score = 100;
+
+            // Deductions
+            score -= bottlenecks.length * 8;
+            antiPatterns.forEach(p => {
+                if (p.severity === 'high') score -= 12;
+                else if (p.severity === 'medium') score -= 6;
+                else score -= 3;
+            });
+
+            // Bonus for good practices
+            const hasRoles = steps.filter(s => s.assignee).length / Math.max(steps.length, 1);
+            if (hasRoles > 0.8) score += 5;
+            const hasTime = steps.filter(s => s.timeMinutes > 0).length / Math.max(steps.length, 1);
+            if (hasTime > 0.8) score += 5;
+            if (steps.some(s => s.type === 'decision')) score += 3;
+
+            return Math.max(10, Math.min(100, Math.round(score)));
+        }
+    };
+
+    // ============================================================
+    // FLOWCHART RENDERER (SVG Output)
+    // ============================================================
+    const FlowchartRenderer = {
+        render(steps, analysis) {
+            const nodeW = 210, nodeH = 48;
+            const gapY = 36;
+            const padX = 40, padY = 30;
+            const totalH = steps.length * (nodeH + gapY) - gapY + padY * 2;
+            const totalW = nodeW + padX * 2 + 100; // extra width for labels
+            const centerX = padX + nodeW / 2;
+
+            const bottleneckIds = new Set((analysis.bottlenecks || []).map(b => b.stepId));
+            const highAIIds = new Set(
+                (analysis.aiReadiness || []).filter(a => a.score >= 0.7).map(a => a.stepId)
+            );
+
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" style="font-family:'DM Sans',sans-serif;">`;
+            svg += `<defs>
+                <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="130%">
+                    <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.08"/>
+                </filter>
+            </defs>`;
+
+            steps.forEach((step, i) => {
+                const x = centerX;
+                const y = padY + i * (nodeH + gapY) + nodeH / 2;
+
+                // Connector line to next step
+                if (i < steps.length - 1) {
+                    const nextY = padY + (i + 1) * (nodeH + gapY);
+                    svg += `<line x1="${x}" y1="${y + nodeH/2}" x2="${x}" y2="${nextY}" stroke="#D6D3D1" stroke-width="1.5" stroke-dasharray="4,4"/>`;
+                    // Arrow
+                    svg += `<polygon points="${x-4},${nextY-6} ${x+4},${nextY-6} ${x},${nextY}" fill="#D6D3D1"/>`;
+                }
+
+                // Node shape
+                const nx = x - nodeW/2;
+                const ny = y - nodeH/2;
+                const isBottleneck = bottleneckIds.has(step.id);
+                const isHighAI = highAIIds.has(step.id);
+                const borderColor = isBottleneck ? '#EF4444' : isHighAI ? '#22C55E' : '#E7E5E4';
+                const bgColor = isBottleneck ? '#FEF2F2' : isHighAI ? '#F0FDF4' : '#FFFFFF';
+                const typeColor = { start: '#14B8A6', action: '#3B82F6', decision: '#F59E0B', end: '#A855F7' }[step.type] || '#3B82F6';
+
+                if (step.type === 'decision') {
+                    // Diamond
+                    const cx = x, cy = y;
+                    const dw = nodeW / 2 + 10, dh = nodeH / 2 + 6;
+                    svg += `<polygon points="${cx},${cy-dh} ${cx+dw},${cy} ${cx},${cy+dh} ${cx-dw},${cy}" fill="${bgColor}" stroke="${borderColor}" stroke-width="${isBottleneck ? 2 : 1.5}" filter="url(#cardShadow)"/>`;
+                    svg += `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="11" font-weight="500" fill="#1C1917">${this._truncate(step.name, 22)}</text>`;
+                } else if (step.type === 'start' || step.type === 'end') {
+                    // Rounded pill
+                    svg += `<rect x="${nx}" y="${ny}" width="${nodeW}" height="${nodeH}" rx="${nodeH/2}" fill="${bgColor}" stroke="${borderColor}" stroke-width="1.5" filter="url(#cardShadow)"/>`;
+                    svg += `<circle cx="${nx + 14}" cy="${y}" r="4" fill="${typeColor}"/>`;
+                    svg += `<text x="${nx + 26}" y="${y + 4}" font-size="12" font-weight="500" fill="#1C1917">${this._truncate(step.name, 26)}</text>`;
+                } else {
+                    // Rectangle
+                    svg += `<rect x="${nx}" y="${ny}" width="${nodeW}" height="${nodeH}" rx="8" fill="${bgColor}" stroke="${borderColor}" stroke-width="${isBottleneck ? 2 : 1.5}" filter="url(#cardShadow)"/>`;
+                    svg += `<circle cx="${nx + 14}" cy="${y}" r="4" fill="${typeColor}"/>`;
+                    svg += `<text x="${nx + 26}" y="${y + 4}" font-size="12" font-weight="500" fill="#1C1917">${this._truncate(step.name, 26)}</text>`;
+                }
+
+                // Bottleneck / AI-ready indicator
+                if (isBottleneck) {
+                    svg += `<text x="${nx + nodeW + 8}" y="${y + 4}" font-size="10" fill="#EF4444" font-weight="600">BOTTLENECK</text>`;
+                } else if (isHighAI) {
+                    svg += `<text x="${nx + nodeW + 8}" y="${y + 4}" font-size="10" fill="#22C55E" font-weight="600">AI-READY</text>`;
+                }
+            });
+
+            svg += '</svg>';
+            return svg;
+        },
+
+        _truncate(str, max) {
+            if (!str) return 'Unnamed';
+            return str.length > max ? str.slice(0, max - 1) + '...' : str;
+        }
+    };
+
+    // ============================================================
+    // OUTPUT GENERATOR (3-Tier Export)
+    // ============================================================
+    const OutputGenerator = {
+        generate(model, analysis) {
+            return {
+                tier1: this._generateTier1(model, analysis),
+                tier2: this._generateTier2(model, analysis),
+                tier3: this._generateTier3(model, analysis)
+            };
+        },
+
+        _generateTier1(model, analysis) {
+            const steps = model.getSteps();
+            const wfName = model.data.workflow.name || 'Workflow';
+
+            let claudeMd = `# CLAUDE.md - ${wfName} Automation\n\n`;
+            claudeMd += `## Workflow Context\n`;
+            claudeMd += `This workflow has ${steps.length} steps, ${analysis.decisionCount} decision points, and involves ${analysis.roles.length} roles.\n`;
+            claudeMd += `Estimated time: ${formatTime(analysis.time.weeklyMinutes)}/week (${analysis.time.annualHours} hours/year)\n`;
+            claudeMd += `AI automation potential: ${analysis.time.savingsPercent}%\n\n`;
+
+            claudeMd += `## Steps to Automate\n`;
+            const automatable = analysis.aiReadiness.filter(a => a.score >= 0.5);
+            automatable.forEach(a => {
+                claudeMd += `- **${a.stepName || 'Unnamed'}** (${workTypeLabel(a.workType)}, ${Math.round(a.score * 100)}% automatable): ${a.suggestion}\n`;
+            });
+
+            claudeMd += `\n## Bottlenecks to Address\n`;
+            if (analysis.bottlenecks.length > 0) {
+                analysis.bottlenecks.forEach(b => {
+                    claudeMd += `- **${b.stepName}**: ${b.reasons.join('; ')}\n`;
+                });
+            } else {
+                claudeMd += `- No major bottlenecks detected\n`;
+            }
+
+            claudeMd += `\n## Automation Guidelines\n`;
+            claudeMd += `- Focus on high-automation steps first (manual data entry, research, creative drafting)\n`;
+            claudeMd += `- Keep humans in the loop for decision-making and final approvals\n`;
+            claudeMd += `- Build skills for repetitive tasks, use hooks for quality checks\n`;
+
+            let skills = `# Example Skill: automate-${wfName.toLowerCase().replace(/\s+/g, '-')}\n\n`;
+            skills += `## What this skill does\n`;
+            skills += `Automates the ${wfName} workflow by handling the AI-ready steps.\n\n`;
+            skills += `## Steps handled\n`;
+            automatable.forEach(a => {
+                skills += `1. ${a.stepName} - ${a.suggestion}\n`;
+            });
+
+            return { claudeMd, skills, label: 'Claude Code' };
+        },
+
+        _generateTier2(model, analysis) {
+            const steps = model.getSteps();
+            const wfName = model.data.workflow.name || 'Workflow';
+
+            let prompt = `You are helping me optimize my "${wfName}" workflow. Here's the current process:\n\n`;
+            steps.forEach((s, i) => {
+                prompt += `${i + 1}. **${s.name || 'Step ' + (i + 1)}**`;
+                if (s.assignee) prompt += ` (${s.assignee})`;
+                if (s.timeMinutes) prompt += ` - ${formatTime(s.timeMinutes)}`;
+                if (s.description) prompt += `\n   ${s.description}`;
+                if (s.type === 'decision' && s.branches) {
+                    prompt += `\n   Decision: "${s.branches.yes.label}" or "${s.branches.no.label}"`;
+                }
+                prompt += '\n';
+            });
+
+            prompt += `\n## Analysis Results\n`;
+            prompt += `- Health Score: ${analysis.healthScore}/100\n`;
+            prompt += `- Weekly time: ${formatTime(analysis.time.weeklyMinutes)}\n`;
+            prompt += `- Annual cost: $${analysis.cost.annualCost.toLocaleString()}\n`;
+            prompt += `- AI automation potential: ${analysis.time.savingsPercent}% ($${analysis.cost.potentialSavings.toLocaleString()}/year)\n`;
+
+            if (analysis.bottlenecks.length > 0) {
+                prompt += `\n## Bottlenecks Found\n`;
+                analysis.bottlenecks.forEach(b => {
+                    prompt += `- ${b.stepName}: ${b.reasons.join('; ')}\n`;
+                });
+            }
+
+            prompt += `\n## What I Need\n`;
+            prompt += `1. Suggest specific AI tools for each automatable step\n`;
+            prompt += `2. Propose an optimized version of this workflow\n`;
+            prompt += `3. Identify quick wins I can implement this week\n`;
+            prompt += `4. Estimate the time savings for each improvement\n`;
+
+            let guide = `## How to Use This Prompt\n`;
+            guide += `1. Copy the prompt above\n`;
+            guide += `2. Paste into ChatGPT, Claude, or your preferred AI tool\n`;
+            guide += `3. Review the suggestions and implement the quick wins first\n`;
+            guide += `4. Come back and rebuild the workflow with improvements\n`;
+
+            return { prompt, guide, label: 'AI Tools' };
+        },
+
+        _generateTier3(model, analysis) {
+            const wfName = model.data.workflow.name || 'your workflow';
+
+            let summary = `## Your ${wfName} Analysis\n\n`;
+            summary += `Your team spends approximately **${formatTime(analysis.time.weeklyMinutes)} per week** on this workflow, `;
+            summary += `which adds up to about **${analysis.time.annualHours} hours per year** `;
+            summary += `(roughly **$${analysis.cost.annualCost.toLocaleString()}** in labor costs at $${analysis.cost.hourlyRate}/hr).\n\n`;
+
+            summary += `### Health Score: ${analysis.healthScore}/100\n`;
+            if (analysis.healthScore >= 80) summary += `Your workflow is well-structured with clear ownership.\n\n`;
+            else if (analysis.healthScore >= 60) summary += `Your workflow has some areas for improvement.\n\n`;
+            else summary += `Your workflow has significant optimization opportunities.\n\n`;
+
+            let quickWins = `### Quick Wins\n`;
+            if (analysis.bottlenecks.length > 0) {
+                quickWins += `1. **Address the ${analysis.bottlenecks[0].stepName} bottleneck** - ${analysis.bottlenecks[0].reasons[0]}\n`;
+            }
+            const topAI = analysis.aiReadiness.filter(a => a.score >= 0.7).slice(0, 2);
+            topAI.forEach((a, i) => {
+                quickWins += `${analysis.bottlenecks.length > 0 ? i + 2 : i + 1}. **Automate "${a.stepName}"** - ${a.suggestion}\n`;
+            });
+            if (analysis.antiPatterns.length > 0) {
+                const ap = analysis.antiPatterns[0];
+                quickWins += `${(analysis.bottlenecks.length > 0 ? 1 : 0) + topAI.length + 1}. **${ap.title}** - ${ap.description}\n`;
+            }
+
+            let roi = `### Potential ROI\n`;
+            roi += `- **Time saved:** ${formatTime(analysis.time.aiAutomatableMinutes)}/week (${analysis.time.aiAutomatableHours} hours/year)\n`;
+            roi += `- **Cost savings:** ~$${analysis.cost.potentialSavings.toLocaleString()}/year\n`;
+            roi += `- **Efficiency gain:** ${analysis.time.savingsPercent}% of workflow automatable\n`;
+
+            let cta = `### Next Steps\n`;
+            cta += `Want to implement these improvements? Here are three paths:\n\n`;
+            cta += `1. **DIY with AI tools** - Use the "AI Tools" tab to get a ready-made prompt for ChatGPT or Claude\n`;
+            cta += `2. **Power user path** - Use the "Claude Code" tab for CLAUDE.md configs and automation skills\n`;
+            cta += `3. **Get help** - Share this analysis with your team or an AI consultant to prioritize changes\n`;
+
+            return { summary, quickWins, roi, cta, label: 'Exploring AI' };
+        }
+    };
+
+    // ============================================================
+    // ANALYSIS VIEW (UI Renderer)
+    // ============================================================
+    const AnalysisView = {
+        render(analysis, model) {
+            const section = document.getElementById('analysisSection');
+
+            // Health ring
+            const circumference = 2 * Math.PI * 42;
+            const offset = circumference - (analysis.healthScore / 100) * circumference;
+            const ringColor = analysis.healthScore >= 70 ? 'var(--green-accent)' :
+                              analysis.healthScore >= 50 ? 'var(--amber-accent)' : 'var(--red-accent)';
+            const healthLabel = analysis.healthScore >= 80 ? 'Well-structured' :
+                                analysis.healthScore >= 60 ? 'Room to improve' : 'Needs attention';
+
+            let html = `
+                <div class="health-ring-container">
+                    <div class="health-ring">
+                        <svg width="100" height="100" viewBox="0 0 100 100">
+                            <circle class="health-ring-bg" cx="50" cy="50" r="42"/>
+                            <circle class="health-ring-fill" cx="50" cy="50" r="42"
+                                stroke="${ringColor}"
+                                stroke-dasharray="${circumference}"
+                                stroke-dashoffset="${offset}"/>
+                            <text class="health-ring-text" x="50" y="48" text-anchor="middle" dominant-baseline="middle" transform="rotate(90 50 50)">${analysis.healthScore}</text>
+                            <text class="health-ring-label" x="50" y="62" text-anchor="middle" transform="rotate(90 50 50)">HEALTH</text>
+                        </svg>
+                    </div>
+                    <div class="health-meta">
+                        <h2>Workflow Analysis</h2>
+                        <p>${healthLabel} - ${analysis.stepCount} steps, ${analysis.decisionCount} decisions, ${analysis.roles.length} roles</p>
+                    </div>
+                </div>
+            `;
+
+            // Insight cards
+            html += '<div class="insight-grid">';
+            // Bottleneck insights
+            analysis.bottlenecks.forEach(b => {
+                html += `
+                    <div class="insight-card bottleneck">
+                        <div class="insight-type">Bottleneck</div>
+                        <div class="insight-title">${escapeHtml(b.stepName)}</div>
+                        <div class="insight-desc">${b.reasons.map(r => escapeHtml(r)).join('. ')}</div>
+                    </div>
+                `;
+            });
+            // Anti-pattern insights
+            analysis.antiPatterns.forEach(ap => {
+                html += `
+                    <div class="insight-card ${ap.type}">
+                        <div class="insight-type">${ap.type === 'opportunity' ? 'Opportunity' : ap.type === 'bottleneck' ? 'Bottleneck' : ap.type === 'pattern' ? 'Pattern' : 'Info'}</div>
+                        <div class="insight-title">${escapeHtml(ap.title)}</div>
+                        <div class="insight-desc">${escapeHtml(ap.description)}</div>
+                    </div>
+                `;
+            });
+            // AI readiness top opportunities
+            const topOps = analysis.aiReadiness.filter(a => a.score >= 0.5).slice(0, 3);
+            topOps.forEach(op => {
+                html += `
+                    <div class="insight-card opportunity">
+                        <div class="insight-type">AI Opportunity (${Math.round(op.score * 100)}%)</div>
+                        <div class="insight-title">${escapeHtml(op.stepName || 'Unnamed step')}</div>
+                        <div class="insight-desc">${escapeHtml(op.suggestion)}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            // Time breakdown
+            html += `
+                <div class="time-breakdown">
+                    <h3>Time & Cost Breakdown</h3>
+                    <div class="time-stats">
+                        <div class="stat-item">
+                            <span class="time-stat-value">${formatTime(analysis.time.weeklyMinutes)}</span>
+                            <span class="time-stat-label">Per week</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="time-stat-value">${analysis.time.annualHours}h</span>
+                            <span class="time-stat-label">Per year</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="time-stat-value" style="color:var(--green)">$${analysis.cost.potentialSavings.toLocaleString()}</span>
+                            <span class="time-stat-label">Potential savings/yr</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="time-stat-value" style="color:var(--accent)">${analysis.time.savingsPercent}%</span>
+                            <span class="time-stat-label">Automatable</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Flowchart
+            const flowchartSvg = FlowchartRenderer.render(model.getSteps(), analysis);
+            html += `
+                <div class="flowchart-container">
+                    <h3 style="font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;margin-bottom:16px;">Generated Flowchart</h3>
+                    ${flowchartSvg}
+                </div>
+            `;
+
+            section.innerHTML = html;
+            section.classList.add('active');
+
+            // Animate health ring
+            requestAnimationFrame(() => {
+                const ring = section.querySelector('.health-ring-fill');
+                if (ring) {
+                    ring.style.strokeDashoffset = circumference;
+                    requestAnimationFrame(() => { ring.style.strokeDashoffset = offset; });
+                }
+            });
+        }
+    };
+
+    // ============================================================
+    // OUTPUT VIEW (UI Renderer for 3-tier export)
+    // ============================================================
+    const OutputView = {
+        currentTier: 'tier2',
+        outputData: null,
+
+        render(output) {
+            this.outputData = output;
+            const section = document.getElementById('outputSection');
+
+            let html = `
+                <div class="tier-tabs">
+                    <button class="tier-tab ${this.currentTier === 'tier1' ? 'active' : ''}" onclick="OutputView.switchTier('tier1')">
+                        ${output.tier1.label}
+                    </button>
+                    <button class="tier-tab ${this.currentTier === 'tier2' ? 'active' : ''}" onclick="OutputView.switchTier('tier2')">
+                        ${output.tier2.label}
+                    </button>
+                    <button class="tier-tab ${this.currentTier === 'tier3' ? 'active' : ''}" onclick="OutputView.switchTier('tier3')">
+                        ${output.tier3.label}
+                    </button>
+                </div>
+                <div class="tier-content" id="tierContent">
+                    <button class="btn copy-btn" onclick="OutputView.copy()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Copy
+                    </button>
+                    <pre id="tierText"></pre>
+                </div>
+            `;
+
+            section.innerHTML = html;
+            section.classList.add('active');
+            this._renderTierContent();
+        },
+
+        switchTier(tier) {
+            this.currentTier = tier;
+            document.querySelectorAll('.tier-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tier-tab:nth-child(${tier === 'tier1' ? 1 : tier === 'tier2' ? 2 : 3})`).classList.add('active');
+            this._renderTierContent();
+        },
+
+        _renderTierContent() {
+            const textEl = document.getElementById('tierText');
+            if (!textEl || !this.outputData) return;
+
+            const data = this.outputData[this.currentTier];
+            let text = '';
+
+            if (this.currentTier === 'tier1') {
+                text = data.claudeMd + '\n---\n\n' + data.skills;
+            } else if (this.currentTier === 'tier2') {
+                text = data.prompt + '\n---\n\n' + data.guide;
+            } else {
+                text = data.summary + '\n' + data.quickWins + '\n' + data.roi + '\n' + data.cta;
+            }
+
+            textEl.textContent = text;
+        },
+
+        copy() {
+            const textEl = document.getElementById('tierText');
+            if (!textEl) return;
+            navigator.clipboard.writeText(textEl.textContent).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.classList.add('copied');
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+                }, 2000);
+            });
+        }
+    };
+
+    // ============================================================
+    // LLM ADAPTER (Multi-provider)
+    // ============================================================
+    const PROVIDER_CONFIG = {
+        openai: {
+            name: 'OpenAI',
+            baseUrl: 'https://api.openai.com/v1/chat/completions',
+            models: [
+                { id: 'gpt-4o', name: 'GPT-4o' },
+                { id: 'gpt-4o-mini', name: 'GPT-4o Mini' }
+            ],
+            needsProxy: false
+        },
+        groq: {
+            name: 'Groq',
+            baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
+            models: [
+                { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' },
+                { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' }
+            ],
+            needsProxy: false
+        },
+        anthropic: {
+            name: 'Anthropic',
+            baseUrl: '', // requires proxy
+            models: [
+                { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet' },
+                { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku' }
+            ],
+            needsProxy: true
+        }
+    };
+
+    // Session-only storage (never persisted)
+    let llmState = {
+        provider: 'none',
+        apiKey: '',
+        model: '',
+        proxyUrl: '',
+        connected: false
+    };
+
+    const WORKFLOW_PARSE_PROMPT = `You are a workflow analysis assistant. The user will describe a business workflow in natural language. Parse it into structured steps.
+
+Return ONLY a valid JSON array of steps (no markdown, no explanation), each with:
+- name (string): short step name (3-6 words)
+- type (string): "start" for first step, "action" for middle steps, "decision" for yes/no branching points, "end" for final step
+- description (string): 1-2 sentences about what happens
+- workType (string): one of manual_data, creative, review, communication, research, decision_making, technical, other
+- assignee (string): who does this step (role name, not person name)
+- timeMinutes (number): estimated minutes per occurrence
+- frequency (string): one of daily, 2_per_week, 3_per_week, weekly, biweekly, monthly, quarterly
+
+Be specific. Infer work types and time estimates from context. Always include a start and end step. For decision points, mark type as "decision".`;
+
+    const LLMAdapter = {
+        async callLLM(messages) {
+            if (!llmState.connected || llmState.provider === 'none') {
+                throw new Error('No LLM provider configured');
+            }
+
+            const config = PROVIDER_CONFIG[llmState.provider];
+            let url = config.baseUrl;
+            let headers = { 'Content-Type': 'application/json' };
+            let body;
+
+            if (llmState.provider === 'anthropic') {
+                url = llmState.proxyUrl;
+                if (!url) throw new Error('Anthropic requires a proxy URL');
+                headers['x-api-key'] = llmState.apiKey;
+                headers['anthropic-version'] = '2023-06-01';
+                body = JSON.stringify({
+                    model: llmState.model,
+                    max_tokens: 2048,
+                    messages: messages.map(m => ({ role: m.role, content: m.content }))
+                });
+            } else {
+                headers['Authorization'] = `Bearer ${llmState.apiKey}`;
+                body = JSON.stringify({
+                    model: llmState.model,
+                    messages: messages,
+                    temperature: 0.3,
+                    max_tokens: 2048
+                });
+            }
+
+            const response = await fetch(url, { method: 'POST', headers, body });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`API error (${response.status}): ${err.slice(0, 200)}`);
+            }
+
+            const data = await response.json();
+
+            if (llmState.provider === 'anthropic') {
+                return data.content?.[0]?.text || '';
+            }
+            return data.choices?.[0]?.message?.content || '';
+        },
+
+        async parseWorkflow(description) {
+            const messages = [
+                { role: 'system', content: WORKFLOW_PARSE_PROMPT },
+                { role: 'user', content: description }
+            ];
+
+            const response = await this.callLLM(messages);
+
+            // Extract JSON from response (handle markdown code blocks)
+            let jsonStr = response;
+            const jsonMatch = response.match(/\[[\s\S]*\]/);
+            if (jsonMatch) jsonStr = jsonMatch[0];
+
+            try {
+                const steps = JSON.parse(jsonStr);
+                if (!Array.isArray(steps)) throw new Error('Expected array');
+                return steps;
+            } catch (e) {
+                throw new Error('Could not parse LLM response as workflow steps. Try rephrasing.');
+            }
+        },
+
+        async testConnection() {
+            const messages = [
+                { role: 'user', content: 'Reply with just "connected" and nothing else.' }
+            ];
+            const response = await this.callLLM(messages);
+            return response.toLowerCase().includes('connected');
+        }
+    };
+
+    // ============================================================
+    // APP CONTROLLER
+    // ============================================================
+    const model = new WorkflowModel();
+    let appStarted = false;
+
+    const App = {
+        init() {
+            // Register model listeners
+            model.onChange((m) => {
+                if (appStarted) {
+                    TreeBuilder.render(m);
+                    SummaryBar.render(m);
+                    StorageManager.autoSave(m);
+                }
+            });
+
+            // Check for auto-saved session
+            const autoSaved = StorageManager.loadAutoSave();
+            if (autoSaved && autoSaved.steps && autoSaved.steps.length > 0) {
+                model.fromJSON(autoSaved);
+                document.getElementById('workflowNameInput').value = model.data.workflow.name;
+                this.showTree();
+            } else {
+                this.showEmptyState();
+            }
+
+            // Render template cards in empty state
+            this.renderTemplateCards();
+
+            // Workflow name input
+            document.getElementById('workflowNameInput').addEventListener('input', (e) => {
+                model.setWorkflowName(e.target.value);
+            });
+
+            // Button events
+            document.getElementById('btnStartFresh').addEventListener('click', () => this.startFresh());
+            document.getElementById('btnTemplates').addEventListener('click', () => this.openModal('modalTemplates'));
+            document.getElementById('btnSaved').addEventListener('click', () => this.openSavedModal());
+            document.getElementById('btnSave').addEventListener('click', () => this.saveWorkflow());
+            document.getElementById('btnAnalyze').addEventListener('click', () => this.analyze());
+            document.getElementById('btnSettings').addEventListener('click', () => this.openModal('modalSettings'));
+            document.getElementById('llmAssistBtn').addEventListener('click', () => this.llmGenerate());
+            document.getElementById('llmAssistInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.llmGenerate(); }
+            });
+
+            // Close modals on overlay click
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) overlay.classList.remove('visible');
+                });
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.modal-overlay.visible').forEach(m => m.classList.remove('visible'));
+                }
+                if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                    e.preventDefault();
+                    this.saveWorkflow();
+                }
+            });
+        },
+
+        showEmptyState() {
+            document.getElementById('emptyState').style.display = 'flex';
+            document.getElementById('treeArea').classList.remove('active');
+            document.getElementById('summarySidebar').classList.remove('active');
+            appStarted = false;
+        },
+
+        showTree() {
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('treeArea').classList.add('active');
+            document.getElementById('summarySidebar').classList.add('active');
+            appStarted = true;
+            TreeBuilder.render(model);
+            SummaryBar.render(model);
+        },
+
+        renderTemplateCards() {
+            const grid = document.getElementById('templateGrid');
+            grid.innerHTML = TemplateLibrary.getAll().map(t => `
+                <div class="template-card" onclick="App.loadTemplate('${t.id}')">
+                    <div class="template-card-icon" style="background:${t.iconBg}">${t.icon}</div>
+                    <h3>${t.name}</h3>
+                    <p>${t.description}</p>
+                </div>
+            `).join('');
+
+            // Also render in modal
+            const list = document.getElementById('templateList');
+            list.innerHTML = TemplateLibrary.getAll().map(t => `
+                <div class="template-list-item" onclick="App.loadTemplate('${t.id}'); App.closeModal('modalTemplates');">
+                    <div class="tli-icon" style="background:${t.iconBg}">${t.icon}</div>
+                    <div class="tli-info">
+                        <h4>${t.name}</h4>
+                        <p>${t.description}</p>
+                    </div>
+                </div>
+            `).join('');
+        },
+
+        startFresh() {
+            model.reset();
+            model.data.workflow.name = 'My Workflow';
+            document.getElementById('workflowNameInput').value = 'My Workflow';
+            expandedStepId = null;
+
+            // Add a start step and first action step
+            model.addStep({ type: 'start', name: 'Process starts', description: '', frequency: 'weekly' });
+            model.addStep({ type: 'action', name: '', description: '', frequency: 'weekly' });
+
+            this.showTree();
+            // Expand the second step so user can start filling in
+            setTimeout(() => {
+                const steps = model.getSteps();
+                if (steps.length > 1) this.toggleStep(steps[1].id);
+            }, 100);
+        },
+
+        loadTemplate(templateId) {
+            const template = TemplateLibrary.getById(templateId);
+            if (!template) return;
+
+            model.reset();
+            model.data.workflow.name = template.name;
+            document.getElementById('workflowNameInput').value = template.name;
+            expandedStepId = null;
+
+            model.loadSteps(template.steps);
+
+            // Fix branch target references after loading
+            const steps = model.getSteps();
+            steps.forEach(s => {
+                if (s.type === 'decision' && s.branches) {
+                    // Point "yes" to next step if not set
+                    const idx = steps.findIndex(st => st.id === s.id);
+                    if (!s.branches.yes.targetStepId && idx < steps.length - 1) {
+                        s.branches.yes.targetStepId = steps[idx + 1].id;
+                    }
+                    // Point "no" to a previous step (loop-back) if not set
+                    if (!s.branches.no.targetStepId && idx > 1) {
+                        s.branches.no.targetStepId = steps[idx - 1].id;
+                    }
+                }
+            });
+
+            this.showTree();
+            this.toast(`Loaded "${template.name}" template`);
+        },
+
+        // Step operations
+        addStep(step = {}) {
+            model.addStep({
+                type: 'action',
+                name: '',
+                description: '',
+                frequency: 'weekly',
+                ...step
+            });
+        },
+
+        addStepAfter(afterIndex) {
+            const newStep = model.addStep({
+                type: 'action',
+                name: '',
+                description: '',
+                frequency: 'weekly'
+            }, afterIndex);
+            // Expand the new step
+            setTimeout(() => this.toggleStep(newStep.id), 50);
+        },
+
+        toggleStep(stepId) {
+            if (expandedStepId === stepId) {
+                expandedStepId = null;
+            } else {
+                expandedStepId = stepId;
+            }
+            TreeBuilder.render(model);
+            SummaryBar.render(model);
+
+            // Scroll to expanded card
+            if (expandedStepId) {
+                setTimeout(() => {
+                    const card = document.querySelector(`[data-step-id="${stepId}"]`);
+                    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 50);
+            }
+        },
+
+        updateStep(stepId, field, value) {
+            const changes = {};
+            changes[field] = value;
+            model.updateStep(stepId, changes);
+        },
+
+        updateBranch(stepId, branch, field, value) {
+            const step = model.getStep(stepId);
+            if (!step || !step.branches) return;
+            step.branches[branch][field] = value;
+            model._touch();
+            model._notify();
+        },
+
+        removeStep(stepId) {
+            if (expandedStepId === stepId) expandedStepId = null;
+            model.removeStep(stepId);
+        },
+
+        toggleDecision(stepId) {
+            model.convertToDecision(stepId);
+        },
+
+        // Save/Load
+        saveWorkflow() {
+            if (model.getStepCount() === 0) {
+                this.toast('Nothing to save yet');
+                return;
+            }
+            StorageManager.save(model);
+            this.toast('Workflow saved');
+        },
+
+        openSavedModal() {
+            const saved = StorageManager.listSaved();
+            const listEl = document.getElementById('savedList');
+
+            if (saved.length === 0) {
+                listEl.innerHTML = '<div class="sidebar-empty">No saved workflows yet</div>';
+            } else {
+                listEl.innerHTML = `<div class="saved-list">
+                    ${saved.map(s => {
+                        const date = new Date(s.savedAt);
+                        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        return `
+                            <div class="saved-item" onclick="App.loadSaved('${s.id}'); App.closeModal('modalSaved');">
+                                <div class="saved-item-info">
+                                    <h4>${escapeHtml(s.name)}</h4>
+                                    <p>${s.stepCount} steps - ${dateStr}</p>
+                                </div>
+                                <div class="saved-item-actions">
+                                    <button class="btn btn-ghost btn-icon" title="Delete" onclick="event.stopPropagation(); App.deleteSaved('${s.id}');">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>`;
+            }
+
+            this.openModal('modalSaved');
+        },
+
+        loadSaved(id) {
+            const data = StorageManager.load(id);
+            if (!data) return;
+            model.fromJSON(data);
+            document.getElementById('workflowNameInput').value = model.data.workflow.name;
+            expandedStepId = null;
+            this.showTree();
+            this.toast('Workflow loaded');
+        },
+
+        deleteSaved(id) {
+            StorageManager.deleteSaved(id);
+            this.openSavedModal(); // Re-render
+            this.toast('Workflow deleted');
+        },
+
+        // Analysis
+        analyze() {
+            if (model.getStepCount() < 2) {
+                this.toast('Add at least 2 steps to analyze');
+                return;
+            }
+
+            const analysis = AnalysisEngine.analyze(model);
+            if (!analysis) return;
+
+            model.data.analysis = analysis;
+
+            // Render analysis results
+            AnalysisView.render(analysis, model);
+
+            // Generate and render output
+            const output = OutputGenerator.generate(model, analysis);
+            OutputView.render(output);
+
+            // Scroll to analysis
+            setTimeout(() => {
+                document.getElementById('analysisSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
+            this.toast('Analysis complete');
+        },
+
+        // Modals
+        openModal(id) {
+            document.getElementById(id).classList.add('visible');
+        },
+
+        closeModal(id) {
+            document.getElementById(id).classList.remove('visible');
+        },
+
+        // LLM Settings
+        onProviderChange() {
+            const provider = document.getElementById('settingsProvider').value;
+            const keyGroup = document.getElementById('settingsKeyGroup');
+            const proxyGroup = document.getElementById('settingsProxyGroup');
+            const modelSelect = document.getElementById('settingsModel');
+            const testResult = document.getElementById('settingsTestResult');
+
+            testResult.textContent = '';
+
+            if (provider === 'none') {
+                keyGroup.style.display = 'none';
+                return;
+            }
+
+            keyGroup.style.display = 'block';
+            proxyGroup.style.display = PROVIDER_CONFIG[provider].needsProxy ? 'block' : 'none';
+
+            // Populate model dropdown
+            modelSelect.innerHTML = '';
+            PROVIDER_CONFIG[provider].models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.name;
+                modelSelect.appendChild(opt);
+            });
+        },
+
+        saveSettings() {
+            const provider = document.getElementById('settingsProvider').value;
+
+            if (provider === 'none') {
+                llmState = { provider: 'none', apiKey: '', model: '', proxyUrl: '', connected: false };
+                this.updateLLMUI();
+                this.closeModal('modalSettings');
+                this.toast('LLM disconnected');
+                return;
+            }
+
+            const apiKey = document.getElementById('settingsApiKey').value.trim();
+            const model = document.getElementById('settingsModel').value;
+            const proxyUrl = document.getElementById('settingsProxy').value.trim();
+
+            if (!apiKey) {
+                this.toast('Please enter an API key');
+                return;
+            }
+
+            if (provider === 'anthropic' && !proxyUrl) {
+                this.toast('Anthropic requires a proxy URL');
+                return;
+            }
+
+            llmState.provider = provider;
+            llmState.apiKey = apiKey;
+            llmState.model = model;
+            llmState.proxyUrl = proxyUrl;
+            llmState.connected = true;
+
+            this.updateLLMUI();
+            this.closeModal('modalSettings');
+            this.toast(`Connected to ${PROVIDER_CONFIG[provider].name}`);
+        },
+
+        async testConnection() {
+            const provider = document.getElementById('settingsProvider').value;
+            const apiKey = document.getElementById('settingsApiKey').value.trim();
+            const model = document.getElementById('settingsModel').value;
+            const proxyUrl = document.getElementById('settingsProxy').value.trim();
+            const resultEl = document.getElementById('settingsTestResult');
+            const testBtn = document.getElementById('settingsTestBtn');
+
+            if (!apiKey) {
+                resultEl.textContent = 'Enter an API key first';
+                resultEl.style.color = 'var(--text-secondary)';
+                return;
+            }
+
+            // Temporarily set state for testing
+            const prevState = { ...llmState };
+            llmState.provider = provider;
+            llmState.apiKey = apiKey;
+            llmState.model = model;
+            llmState.proxyUrl = proxyUrl;
+            llmState.connected = true;
+
+            testBtn.disabled = true;
+            testBtn.textContent = 'Testing...';
+            resultEl.textContent = '';
+
+            try {
+                await LLMAdapter.testConnection();
+                resultEl.textContent = 'Connected';
+                resultEl.style.color = '#2d8a4e';
+            } catch (err) {
+                resultEl.textContent = err.message.slice(0, 80);
+                resultEl.style.color = '#c53030';
+                // Restore previous state on failure
+                Object.assign(llmState, prevState);
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = 'Test Connection';
+            }
+        },
+
+        async llmGenerate() {
+            const input = document.getElementById('llmAssistInput');
+            const btn = document.getElementById('llmAssistBtn');
+            const description = input.value.trim();
+
+            if (!description) {
+                this.toast('Describe your workflow first');
+                return;
+            }
+
+            if (!llmState.connected) {
+                this.toast('Set up an API key in Settings first');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            input.disabled = true;
+
+            try {
+                const rawSteps = await LLMAdapter.parseWorkflow(description);
+
+                // Clear existing steps before generating
+                const currentSteps = [...model.data.steps];
+                currentSteps.forEach(s => model.removeStep(s.id));
+
+                // Add parsed steps
+                rawSteps.forEach((s, i) => {
+                    const step = {
+                        id: 'step-' + crypto.randomUUID(),
+                        type: s.type || 'action',
+                        name: s.name || `Step ${i + 1}`,
+                        description: s.description || '',
+                        workType: s.workType || 'other',
+                        assignee: s.assignee || '',
+                        timeMinutes: s.timeMinutes || 15,
+                        frequency: s.frequency || 'weekly',
+                        next: [],
+                        branches: null,
+                        order: i
+                    };
+
+                    // Handle decision steps
+                    if (s.type === 'decision') {
+                        step.branches = {
+                            yes: { label: 'Yes', targetStepId: null },
+                            no: { label: 'No', targetStepId: null }
+                        };
+                    }
+
+                    model.addStep(step);
+                });
+
+                // Re-link the next pointers
+                const steps = model.getSteps();
+                steps.forEach((s, i) => {
+                    if (i < steps.length - 1 && s.type !== 'decision') {
+                        s.next = [steps[i + 1].id];
+                    }
+                });
+
+                model._notify();
+
+                if (!appStarted) {
+                    appStarted = true;
+                    this.showTree();
+                }
+
+                input.value = '';
+                this.toast(`Generated ${rawSteps.length} steps from description`);
+            } catch (err) {
+                this.toast(err.message || 'Failed to generate steps');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Steps';
+                input.disabled = false;
+                input.focus();
+            }
+        },
+
+        updateLLMUI() {
+            const badge = document.getElementById('llmBadge');
+            const input = document.getElementById('llmAssistInput');
+            const btn = document.getElementById('llmAssistBtn');
+
+            if (llmState.connected && llmState.provider !== 'none') {
+                const providerName = PROVIDER_CONFIG[llmState.provider].name;
+                badge.textContent = providerName;
+                badge.style.background = 'rgba(45, 138, 78, 0.1)';
+                badge.style.color = '#2d8a4e';
+                input.disabled = false;
+                input.placeholder = 'Describe your workflow in a sentence or two...';
+                btn.disabled = false;
+            } else {
+                badge.textContent = 'No API key';
+                badge.style.background = '';
+                badge.style.color = '';
+                input.disabled = true;
+                input.placeholder = 'Describe your workflow in a sentence or two... (requires API key in Settings)';
+                btn.disabled = true;
+            }
+        },
+
+        // Toast notifications
+        toast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('visible');
+            clearTimeout(this._toastTimer);
+            this._toastTimer = setTimeout(() => {
+                toast.classList.remove('visible');
+            }, 2200);
+        }
+    };
+
+    // ============================================================
+    // BOOT
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>
