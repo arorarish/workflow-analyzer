@@ -1407,6 +1407,137 @@
             margin-top: 20px; font-size: 12px; color: #A8A29E;
             text-align: center;
         }
+
+        /* ============================================================
+           ONBOARDING MODAL + HELP ICON
+           Reuses .modal-overlay / .modal classes for consistency.
+           Auto-shows on first-ever unlock; help icon re-opens it.
+           ============================================================ */
+        .onboarding-modal { max-width: 540px; }
+        .onboarding-body {
+            padding: 32px 28px 24px;
+            text-align: center;
+        }
+        .onboarding-slide { display: none; }
+        .onboarding-slide.active { display: block; animation: modalEnter 0.25s ease; }
+        .onboarding-icon {
+            width: 64px; height: 64px;
+            margin: 0 auto 20px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 16px;
+            background: var(--bg-selected);
+            color: var(--border-focus);
+        }
+        .onboarding-title {
+            font-family: 'Instrument Serif', serif;
+            font-weight: 400; font-size: 30px;
+            color: var(--text); margin-bottom: 12px;
+            line-height: 1.2;
+        }
+        .onboarding-desc {
+            font-size: 15px; line-height: 1.55;
+            color: var(--text-secondary);
+            max-width: 420px; margin: 0 auto;
+        }
+        .onboarding-desc strong { color: var(--text); font-weight: 600; }
+        .onboarding-examples {
+            margin-top: 18px;
+            display: flex; flex-direction: column; gap: 8px;
+            text-align: left;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .onboarding-examples strong {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .onboarding-footer {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 24px 20px;
+            border-top: 1px solid var(--border);
+        }
+        .onboarding-dots {
+            display: flex; gap: 6px;
+        }
+        .onboarding-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--border-strong);
+            transition: var(--transition);
+        }
+        .onboarding-dot.active {
+            background: var(--border-focus);
+            width: 20px; border-radius: 4px;
+        }
+        .onboarding-nav {
+            display: flex; gap: 8px;
+        }
+        .onboarding-btn {
+            padding: 8px 16px;
+            font-size: 13px; font-weight: 500;
+            font-family: 'DM Sans', sans-serif;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .onboarding-btn:hover { background: var(--bg); color: var(--text); }
+        .onboarding-btn.primary {
+            background: var(--text);
+            color: #FFFFFF;
+            border-color: var(--text);
+        }
+        .onboarding-btn.primary:hover { background: #292524; }
+        .onboarding-btn:disabled {
+            opacity: 0.4; cursor: not-allowed;
+        }
+
+        /* Floating help icon — persistent, bottom-right */
+        .help-fab {
+            position: fixed;
+            right: 20px; bottom: 20px;
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: var(--text);
+            color: #FFFFFF;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 20px; font-weight: 500;
+            z-index: 150;
+            transition: var(--transition);
+        }
+        .help-fab:hover {
+            background: var(--border-focus);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(232, 128, 76, 0.3);
+        }
+        .help-fab::after {
+            content: 'How to use';
+            position: absolute;
+            right: calc(100% + 10px);
+            top: 50%; transform: translateY(-50%);
+            background: var(--text);
+            color: #FFFFFF;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px; font-weight: 500;
+            white-space: nowrap;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.15s;
+        }
+        .help-fab:hover::after { opacity: 1; }
     </style>
 </head>
 <body>
@@ -1450,6 +1581,9 @@
                     overlay.style.display = 'none';
                     document.documentElement.style.overflow = '';
                     err.textContent = '';
+                    // Fresh unlock -> pop the quick tour (unless user has
+                    // already dismissed it on a prior visit via localStorage).
+                    if (window.Onboarding) window.Onboarding.tryAutoShow();
                 } else {
                     err.textContent = 'Incorrect password.';
                     input.value = '';
@@ -1659,6 +1793,84 @@
             </div>
         </div>
     </div>
+
+    <!-- ============================================================
+         ONBOARDING MODAL (3 slides) + floating help icon.
+         Shows automatically the first time someone unlocks the gate.
+         Dismissed via the localStorage key 'wa_onboarded_v1'.
+         The help icon (bottom-right) re-opens it anytime.
+         ============================================================ -->
+    <div class="modal-overlay" id="modalOnboarding">
+        <div class="modal onboarding-modal">
+            <div class="modal-header">
+                <h2 style="font-size:14px;color:var(--text-muted);font-weight:500;letter-spacing:0.03em;">QUICK TOUR</h2>
+                <button class="modal-close" onclick="Onboarding.dismiss()">&times;</button>
+            </div>
+            <div class="onboarding-body">
+                <!-- Slide 1: What it is -->
+                <div class="onboarding-slide active" data-slide="0">
+                    <div class="onboarding-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                    </div>
+                    <div class="onboarding-title">Find what to automate, without the consultants.</div>
+                    <div class="onboarding-desc">
+                        Map any business process, spot where time gets stuck, and see
+                        exactly how much you'd save by handing parts of it to AI.
+                        <br><br>
+                        Built for teams that know their workflows are slow but can't
+                        easily explain <strong>where</strong> or <strong>how much</strong>.
+                    </div>
+                </div>
+                <!-- Slide 2: How to start -->
+                <div class="onboarding-slide" data-slide="1">
+                    <div class="onboarding-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    </div>
+                    <div class="onboarding-title">Two ways to start.</div>
+                    <div class="onboarding-desc">
+                        <strong>Pick a template</strong> like Insurance Claim Processing -
+                        a realistic 7-step workflow you can tweak to match your reality.
+                        <br><br>
+                        Or <strong>describe yours in plain English</strong> (needs a Claude
+                        or OpenAI key in Settings) and the tool generates the steps for you.
+                    </div>
+                    <div class="onboarding-examples">
+                        <strong>Try saying:</strong>
+                        <span>&ldquo;Auto claims processing for a mid-size insurer, 500 claims per week&rdquo;</span>
+                        <span>&ldquo;Underwriting review for small-business policies&rdquo;</span>
+                    </div>
+                </div>
+                <!-- Slide 3: What you get -->
+                <div class="onboarding-slide" data-slide="2">
+                    <div class="onboarding-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 12l4-4 4 4 6-6"/></svg>
+                    </div>
+                    <div class="onboarding-title">Click Analyze. Get answers.</div>
+                    <div class="onboarding-desc">
+                        <strong>Bottlenecks</strong> - which steps eat the most time across a year.<br>
+                        <strong>ROI</strong> - real dollar savings at your team's hourly rate.<br>
+                        <strong>Action plan</strong> - specific AI tools to use for each step (Claude, Zapier, Perplexity, etc.).
+                        <br><br>
+                        After generating, type changes like &ldquo;add a fraud check after
+                        triage&rdquo; to <strong>refine it</strong> without starting over.
+                    </div>
+                </div>
+            </div>
+            <div class="onboarding-footer">
+                <div class="onboarding-dots">
+                    <div class="onboarding-dot active" data-dot="0"></div>
+                    <div class="onboarding-dot" data-dot="1"></div>
+                    <div class="onboarding-dot" data-dot="2"></div>
+                </div>
+                <div class="onboarding-nav">
+                    <button class="onboarding-btn" id="obBack" onclick="Onboarding.prev()" disabled>Back</button>
+                    <button class="onboarding-btn primary" id="obNext" onclick="Onboarding.next()">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="help-fab" id="helpFab" onclick="Onboarding.open()" aria-label="Show quick tour">?</button>
 
     <!-- Toast -->
     <div class="toast" id="toast"></div>
@@ -3389,6 +3601,77 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
     };
 
     // ============================================================
+    // ONBOARDING CONTROLLER
+    // Auto-shows once (per browser, via localStorage) after the
+    // password gate is unlocked. The floating "?" button re-opens
+    // it anytime. Three slides, with simple next/back/dots nav.
+    // ============================================================
+    const Onboarding = {
+        ONBOARDED_KEY: 'wa_onboarded_v1',
+        UNLOCK_KEY: 'wa_unlocked_v1',
+        TOTAL_SLIDES: 3,
+        currentSlide: 0,
+
+        // Called from App.init + from the gate unlock handler.
+        // Decides whether to auto-pop the modal on this pageview.
+        tryAutoShow() {
+            let unlocked = false, onboarded = false;
+            try { unlocked = sessionStorage.getItem(this.UNLOCK_KEY) === '1'; } catch (e) {}
+            try { onboarded = localStorage.getItem(this.ONBOARDED_KEY) === '1'; } catch (e) {}
+            if (unlocked && !onboarded) this.open();
+        },
+
+        open() {
+            this.currentSlide = 0;
+            this.renderSlide();
+            document.getElementById('modalOnboarding').classList.add('visible');
+        },
+
+        close() {
+            document.getElementById('modalOnboarding').classList.remove('visible');
+        },
+
+        // Marks the user as onboarded AND closes the modal.
+        // Called from the X button and from "Done" on the last slide.
+        dismiss() {
+            try { localStorage.setItem(this.ONBOARDED_KEY, '1'); } catch (e) {}
+            this.close();
+        },
+
+        next() {
+            if (this.currentSlide < this.TOTAL_SLIDES - 1) {
+                this.currentSlide++;
+                this.renderSlide();
+            } else {
+                this.dismiss();
+            }
+        },
+
+        prev() {
+            if (this.currentSlide > 0) {
+                this.currentSlide--;
+                this.renderSlide();
+            }
+        },
+
+        renderSlide() {
+            document.querySelectorAll('.onboarding-slide').forEach(s => {
+                s.classList.toggle('active', Number(s.dataset.slide) === this.currentSlide);
+            });
+            document.querySelectorAll('.onboarding-dot').forEach(d => {
+                d.classList.toggle('active', Number(d.dataset.dot) === this.currentSlide);
+            });
+            const backBtn = document.getElementById('obBack');
+            const nextBtn = document.getElementById('obNext');
+            backBtn.disabled = this.currentSlide === 0;
+            nextBtn.textContent = this.currentSlide === this.TOTAL_SLIDES - 1 ? 'Got it' : 'Next';
+        }
+    };
+    // Expose to window so the separately-scoped gate <script> (IIFE) and
+    // inline onclick handlers can both reach it.
+    window.Onboarding = Onboarding;
+
+    // ============================================================
     // APP CONTROLLER
     // ============================================================
     const model = new WorkflowModel();
@@ -3436,23 +3719,38 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.llmGenerate(); }
             });
 
-            // Close modals on overlay click
+            // Close modals on overlay click. Onboarding is special-cased
+            // so that any dismissal path (backdrop, ESC, X, "Got it") marks
+            // the user as onboarded — otherwise they'd see the tour again
+            // on next visit, which is annoying after they've already clicked away.
             document.querySelectorAll('.modal-overlay').forEach(overlay => {
                 overlay.addEventListener('click', (e) => {
-                    if (e.target === overlay) overlay.classList.remove('visible');
+                    if (e.target !== overlay) return;
+                    if (overlay.id === 'modalOnboarding') {
+                        Onboarding.dismiss();
+                    } else {
+                        overlay.classList.remove('visible');
+                    }
                 });
             });
 
             // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    document.querySelectorAll('.modal-overlay.visible').forEach(m => m.classList.remove('visible'));
+                    document.querySelectorAll('.modal-overlay.visible').forEach(m => {
+                        if (m.id === 'modalOnboarding') Onboarding.dismiss();
+                        else m.classList.remove('visible');
+                    });
                 }
                 if ((e.metaKey || e.ctrlKey) && e.key === 's') {
                     e.preventDefault();
                     this.saveWorkflow();
                 }
             });
+
+            // Auto-show the quick-tour on first unlock (first-time visitors).
+            // Safe to call even when gated: the check inside is unlock-aware.
+            Onboarding.tryAutoShow();
         },
 
         showEmptyState() {
