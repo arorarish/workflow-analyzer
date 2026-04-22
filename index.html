@@ -1352,9 +1352,112 @@
             .field-row { grid-template-columns: 1fr; }
             .time-stats { grid-template-columns: 1fr 1fr; }
         }
+
+        /* ============================================================
+           PASSWORD GATE (DEMO ONLY - NOT REAL SECURITY)
+           A client-side gate meant to keep the URL casual-browse-proof.
+           Anyone with devtools can read the password. Do not put
+           sensitive data behind it.
+           ============================================================ */
+        .gate-overlay {
+            position: fixed; inset: 0; z-index: 10000;
+            background: linear-gradient(135deg, #FAF8F5 0%, #F5F0E8 100%);
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+        }
+        .gate-card {
+            max-width: 420px; width: 100%;
+            background: #FFFFFF;
+            border: 1px solid #E7E5E4;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            font-family: 'DM Sans', sans-serif;
+        }
+        .gate-title {
+            font-family: 'Instrument Serif', serif;
+            font-size: 28px; font-weight: 400;
+            color: #1C1917; margin-bottom: 8px;
+        }
+        .gate-sub {
+            font-size: 14px; color: #78716C; margin-bottom: 24px;
+        }
+        .gate-input {
+            width: 100%; padding: 12px 14px;
+            border: 1px solid #D6D3D1; border-radius: 8px;
+            font-size: 15px; font-family: 'DM Sans', sans-serif;
+            background: #FFFFFF; color: #1C1917;
+            outline: none; transition: border-color 0.15s;
+            box-sizing: border-box;
+        }
+        .gate-input:focus { border-color: #E8804C; }
+        .gate-btn {
+            width: 100%; margin-top: 12px; padding: 12px 16px;
+            background: #1C1917; color: #FFFFFF;
+            border: none; border-radius: 8px;
+            font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .gate-btn:hover { background: #292524; }
+        .gate-error {
+            margin-top: 12px; font-size: 13px; color: #C53030;
+            min-height: 18px;
+        }
+        .gate-footer {
+            margin-top: 20px; font-size: 12px; color: #A8A29E;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+
+    <!-- ============================================================
+         DEMO PASSWORD GATE — client-side only, not real security.
+         Password: "workflow" (case-insensitive). Stored per-tab in
+         sessionStorage so a demo page reload doesn't re-prompt.
+         ============================================================ -->
+    <div class="gate-overlay" id="gateOverlay" style="display:none;">
+        <div class="gate-card">
+            <div class="gate-title">Workflow Analyzer</div>
+            <div class="gate-sub">Private demo. Enter the access password to continue.</div>
+            <form id="gateForm" autocomplete="off">
+                <input type="password" class="gate-input" id="gatePassword" placeholder="Access password" autofocus>
+                <button type="submit" class="gate-btn">Unlock</button>
+                <div class="gate-error" id="gateError"></div>
+            </form>
+            <div class="gate-footer">Contact the page owner if you need access.</div>
+        </div>
+    </div>
+    <script>
+        // Runs immediately. Shows the gate unless this tab has already unlocked.
+        (function () {
+            var UNLOCK_KEY = 'wa_unlocked_v1';
+            var PASSWORD = 'workflow'; // client-side only — see note above
+            var overlay = document.getElementById('gateOverlay');
+            var unlocked = false;
+            try { unlocked = sessionStorage.getItem(UNLOCK_KEY) === '1'; } catch (e) {}
+            if (!unlocked) {
+                overlay.style.display = 'flex';
+                document.documentElement.style.overflow = 'hidden';
+            }
+            document.getElementById('gateForm').addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                var input = document.getElementById('gatePassword');
+                var err = document.getElementById('gateError');
+                var val = (input.value || '').trim().toLowerCase();
+                if (val === PASSWORD) {
+                    try { sessionStorage.setItem(UNLOCK_KEY, '1'); } catch (e) {}
+                    overlay.style.display = 'none';
+                    document.documentElement.style.overflow = '';
+                    err.textContent = '';
+                } else {
+                    err.textContent = 'Incorrect password.';
+                    input.value = '';
+                    input.focus();
+                }
+            });
+        })();
+    </script>
 
     <!-- ============================================================
          TOPBAR
@@ -1514,7 +1617,7 @@
                             <option value="none">None (tool works fully without AI)</option>
                             <option value="openai">OpenAI (GPT-4o, GPT-4o-mini)</option>
                             <option value="groq">Groq (Llama 3.3, Mixtral)</option>
-                            <option value="anthropic">Anthropic (requires proxy)</option>
+                            <option value="anthropic">Anthropic (Claude Opus, Sonnet, Haiku)</option>
                         </select>
                     </div>
 
@@ -1531,9 +1634,9 @@
 
                         <div id="settingsProxyGroup" style="display:none;">
                             <div class="field-group" style="margin-bottom:12px;">
-                                <label class="field-label">Proxy URL (Anthropic only)</label>
-                                <input type="text" class="field-input" id="settingsProxy" placeholder="https://your-proxy.workers.dev">
-                                <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">Anthropic API doesn't support direct browser requests. You need a CORS proxy.</p>
+                                <label class="field-label">Proxy URL (optional)</label>
+                                <input type="text" class="field-input" id="settingsProxy" placeholder="https://your-proxy.workers.dev (leave blank for direct)">
+                                <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">Leave blank to call Claude directly from the browser. Only set this if you've deployed a CORS proxy.</p>
                             </div>
                         </div>
 
@@ -2018,6 +2121,22 @@
                     { type: 'decision', name: 'Review numbers', description: 'Manager reviews data for accuracy and completeness', workType: 'review', assignee: 'Manager', timeMinutes: 45, frequency: 'monthly', branches: { yes: { label: 'Correct', targetStepId: '' }, no: { label: 'Recheck', targetStepId: '' } } },
                     { type: 'action', name: 'Create presentation', description: 'Design deck with charts, graphs, key insights', workType: 'creative', assignee: 'Communications', timeMinutes: 120, frequency: 'monthly' },
                     { type: 'end', name: 'Report sent', description: 'Shared with leadership via email or dashboard', workType: 'communication', assignee: 'Manager', timeMinutes: 15, frequency: 'monthly' }
+                ]
+            },
+            {
+                id: 'insurance-claim',
+                name: 'Insurance Claim Processing',
+                description: '7 steps - From claim submission to settlement',
+                icon: '&#x1F6E1;',
+                iconBg: 'var(--blue-bg)',
+                steps: [
+                    { type: 'start', name: 'Claim submitted', description: 'Policyholder submits claim via portal, app, email, or agent with photos and details', workType: null, assignee: 'Policyholder', timeMinutes: 15, frequency: 'daily' },
+                    { type: 'action', name: 'Intake and triage', description: 'Verify policy is active, check completeness of submission, categorize by claim type and severity', workType: 'manual_data', assignee: 'Claims Intake Clerk', timeMinutes: 25, frequency: 'daily' },
+                    { type: 'action', name: 'Assign adjuster', description: 'Route to adjuster based on claim type, geography, and workload. Notify assignee.', workType: 'decision_making', assignee: 'Claims Supervisor', timeMinutes: 15, frequency: 'daily' },
+                    { type: 'action', name: 'Investigate and gather evidence', description: 'Adjuster reviews photos, repair estimates, police reports, medical records, witness statements. May request more from claimant.', workType: 'research', assignee: 'Claims Adjuster', timeMinutes: 180, frequency: 'daily' },
+                    { type: 'decision', name: 'Coverage decision', description: 'Determine if claim is covered, partially covered, or denied based on policy terms and evidence', workType: 'decision_making', assignee: 'Claims Adjuster', timeMinutes: 45, frequency: 'daily', branches: { yes: { label: 'Approved', targetStepId: '' }, no: { label: 'Denied / needs more info', targetStepId: '' } } },
+                    { type: 'action', name: 'Communicate outcome to claimant', description: 'Send decision letter, explain settlement amount, answer questions, negotiate if contested', workType: 'communication', assignee: 'Claims Adjuster', timeMinutes: 60, frequency: 'daily' },
+                    { type: 'end', name: 'Payment issued and claim closed', description: 'Finance processes payout, records are filed, case closed in claims system', workType: 'manual_data', assignee: 'Claims Operations', timeMinutes: 30, frequency: 'daily' }
                 ]
             },
             {
@@ -3111,12 +3230,13 @@
         },
         anthropic: {
             name: 'Anthropic',
-            baseUrl: '', // requires proxy
+            baseUrl: 'https://api.anthropic.com/v1/messages',
             models: [
-                { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet' },
-                { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku' }
+                { id: 'claude-opus-4-7', name: 'Claude Opus 4.7 (smartest)' },
+                { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6 (balanced)' },
+                { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5 (fastest)' }
             ],
-            needsProxy: true
+            needsProxy: false
         }
     };
 
@@ -3142,6 +3262,21 @@ Return ONLY a valid JSON array of steps (no markdown, no explanation), each with
 
 Be specific. Infer work types and time estimates from context. Always include a start and end step. For decision points, mark type as "decision".`;
 
+    const WORKFLOW_REFINE_PROMPT = `You are a workflow analysis assistant. The user already has a workflow defined and wants to refine it based on their instruction.
+
+You will be given the current workflow as a JSON array and a natural-language instruction describing what to change (add a step, remove a step, reorder, rename, adjust time estimates, change assignee, etc.).
+
+Return ONLY the complete updated JSON array of steps (no markdown fences, no explanation). Include ALL steps in the returned array — both changed and unchanged. Use the exact same schema as before:
+- name (string): short step name (3-6 words)
+- type (string): "start", "action", "decision", or "end"
+- description (string): 1-2 sentences about what happens
+- workType (string): one of manual_data, creative, review, communication, research, decision_making, technical, other
+- assignee (string): who does this step
+- timeMinutes (number): estimated minutes per occurrence
+- frequency (string): one of daily, 2_per_week, 3_per_week, weekly, biweekly, monthly, quarterly
+
+Preserve steps the user didn't ask to change. Keep existing ordering unless they asked to reorder. Always have exactly one "start" step and one "end" step.`;
+
     const LLMAdapter = {
         async callLLM(messages) {
             if (!llmState.connected || llmState.provider === 'none') {
@@ -3154,14 +3289,19 @@ Be specific. Infer work types and time estimates from context. Always include a 
             let body;
 
             if (llmState.provider === 'anthropic') {
-                url = llmState.proxyUrl;
-                if (!url) throw new Error('Anthropic requires a proxy URL');
+                url = llmState.proxyUrl || config.baseUrl;
                 headers['x-api-key'] = llmState.apiKey;
                 headers['anthropic-version'] = '2023-06-01';
+                if (!llmState.proxyUrl) {
+                    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+                }
+                const systemMsg = messages.find(m => m.role === 'system');
+                const convo = messages.filter(m => m.role !== 'system');
                 body = JSON.stringify({
                     model: llmState.model,
                     max_tokens: 2048,
-                    messages: messages.map(m => ({ role: m.role, content: m.content }))
+                    ...(systemMsg ? { system: systemMsg.content } : {}),
+                    messages: convo.map(m => ({ role: m.role, content: m.content }))
                 });
             } else {
                 headers['Authorization'] = `Bearer ${llmState.apiKey}`;
@@ -3210,6 +3350,35 @@ Be specific. Infer work types and time estimates from context. Always include a 
             }
         },
 
+        async refineWorkflow(instruction, currentSteps) {
+            const slim = currentSteps.map(s => ({
+                name: s.name,
+                type: s.type,
+                description: s.description,
+                workType: s.workType,
+                assignee: s.assignee,
+                timeMinutes: s.timeMinutes,
+                frequency: s.frequency
+            }));
+            const messages = [
+                { role: 'system', content: WORKFLOW_REFINE_PROMPT },
+                { role: 'user', content: `Current workflow:\n${JSON.stringify(slim, null, 2)}\n\nInstruction: ${instruction}` }
+            ];
+            const response = await this.callLLM(messages);
+
+            let jsonStr = response;
+            const jsonMatch = response.match(/\[[\s\S]*\]/);
+            if (jsonMatch) jsonStr = jsonMatch[0];
+
+            try {
+                const steps = JSON.parse(jsonStr);
+                if (!Array.isArray(steps)) throw new Error('Expected array');
+                return steps;
+            } catch (e) {
+                throw new Error('Could not parse refinement response. Try rephrasing.');
+            }
+        },
+
         async testConnection() {
             const messages = [
                 { role: 'user', content: 'Reply with just "connected" and nothing else.' }
@@ -3234,6 +3403,7 @@ Be specific. Infer work types and time estimates from context. Always include a 
                     SummaryBar.render(m);
                     StorageManager.autoSave(m);
                 }
+                this.updateLLMUI();
             });
 
             // Check for auto-saved session
@@ -3556,7 +3726,8 @@ Be specific. Infer work types and time estimates from context. Always include a 
             }
 
             keyGroup.style.display = 'block';
-            proxyGroup.style.display = PROVIDER_CONFIG[provider].needsProxy ? 'block' : 'none';
+            // Show proxy field for Anthropic (as optional) or any provider marked as requiring one
+            proxyGroup.style.display = (provider === 'anthropic' || PROVIDER_CONFIG[provider].needsProxy) ? 'block' : 'none';
 
             // Populate model dropdown
             modelSelect.innerHTML = '';
@@ -3585,11 +3756,6 @@ Be specific. Infer work types and time estimates from context. Always include a 
 
             if (!apiKey) {
                 this.toast('Please enter an API key');
-                return;
-            }
-
-            if (provider === 'anthropic' && !proxyUrl) {
-                this.toast('Anthropic requires a proxy URL');
                 return;
             }
 
@@ -3660,12 +3826,17 @@ Be specific. Infer work types and time estimates from context. Always include a 
                 return;
             }
 
+            const existingSteps = model.getSteps();
+            const isRefine = existingSteps.length > 0;
+
             btn.disabled = true;
-            btn.textContent = 'Generating...';
+            btn.textContent = isRefine ? 'Refining...' : 'Generating...';
             input.disabled = true;
 
             try {
-                const rawSteps = await LLMAdapter.parseWorkflow(description);
+                const rawSteps = isRefine
+                    ? await LLMAdapter.refineWorkflow(description, existingSteps)
+                    : await LLMAdapter.parseWorkflow(description);
 
                 // Clear existing steps before generating
                 const currentSteps = [...model.data.steps];
@@ -3714,13 +3885,13 @@ Be specific. Infer work types and time estimates from context. Always include a 
                 }
 
                 input.value = '';
-                this.toast(`Generated ${rawSteps.length} steps from description`);
+                this.toast(isRefine ? `Refined to ${rawSteps.length} steps` : `Generated ${rawSteps.length} steps`);
             } catch (err) {
                 this.toast(err.message || 'Failed to generate steps');
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Generate Steps';
                 input.disabled = false;
+                this.updateLLMUI();
                 input.focus();
             }
         },
@@ -3729,6 +3900,9 @@ Be specific. Infer work types and time estimates from context. Always include a 
             const badge = document.getElementById('llmBadge');
             const input = document.getElementById('llmAssistInput');
             const btn = document.getElementById('llmAssistBtn');
+            if (!badge || !input || !btn) return;
+
+            const hasSteps = model.data.steps.length > 0;
 
             if (llmState.connected && llmState.provider !== 'none') {
                 const providerName = PROVIDER_CONFIG[llmState.provider].name;
@@ -3736,8 +3910,11 @@ Be specific. Infer work types and time estimates from context. Always include a 
                 badge.style.background = 'rgba(45, 138, 78, 0.1)';
                 badge.style.color = '#2d8a4e';
                 input.disabled = false;
-                input.placeholder = 'Describe your workflow in a sentence or two...';
+                input.placeholder = hasSteps
+                    ? 'Describe a change (e.g., "add a legal review step before sending")...'
+                    : 'Describe your workflow in a sentence or two...';
                 btn.disabled = false;
+                btn.textContent = hasSteps ? 'Refine' : 'Generate Steps';
             } else {
                 badge.textContent = 'No API key';
                 badge.style.background = '';
@@ -3745,6 +3922,7 @@ Be specific. Infer work types and time estimates from context. Always include a 
                 input.disabled = true;
                 input.placeholder = 'Describe your workflow in a sentence or two... (requires API key in Settings)';
                 btn.disabled = true;
+                btn.textContent = 'Generate Steps';
             }
         },
 
