@@ -3473,7 +3473,13 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
 
         renderTemplateCards() {
             const all = TemplateLibrary.getAll();
-            const featured = all.slice(0, 4);
+            // Curated featured set for the landing page. Order = visual priority.
+            // Insurance-claim leads for insurance-industry demos; the rest are
+            // universal workflows that fit almost any company.
+            const FEATURED_IDS = ['insurance-claim', 'customer-onboarding', 'employee-onboarding', 'hiring-pipeline'];
+            const featured = FEATURED_IDS
+                .map(id => TemplateLibrary.getById(id))
+                .filter(Boolean);
 
             // Landing page: show only 4 featured templates
             const grid = document.getElementById('templateGrid');
