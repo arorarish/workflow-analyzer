@@ -1604,6 +1604,10 @@
                 <input type="text" class="workflow-name-input" id="workflowNameInput" placeholder="Untitled Workflow" spellcheck="false">
             </div>
             <div class="topbar-right">
+                <button class="btn btn-ghost" id="btnNew" title="Start a new workflow">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                    New
+                </button>
                 <button class="btn btn-ghost" id="btnTemplates" title="Load template">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     Templates
@@ -3708,6 +3712,7 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
             });
 
             // Button events
+            document.getElementById('btnNew').addEventListener('click', () => this.newWorkflow());
             document.getElementById('btnStartFresh').addEventListener('click', () => this.startFresh());
             document.getElementById('btnTemplates').addEventListener('click', () => this.openModal('modalTemplates'));
             document.getElementById('btnSaved').addEventListener('click', () => this.openSavedModal());
@@ -3807,6 +3812,26 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
                     </div>
                 </div>
             `).join('');
+        },
+
+        // Return to the empty state so the user can choose again:
+        // pick a template, AI-generate, or start from scratch. Confirms
+        // before wiping if there's a real workflow in progress (3+ steps
+        // — anything smaller is just the skeleton from startFresh()).
+        newWorkflow() {
+            const stepCount = model.getSteps().length;
+            if (stepCount >= 3) {
+                const ok = confirm('Start over? This will clear the current workflow from the screen. (Saved workflows in "Saved" are unaffected.)');
+                if (!ok) return;
+            }
+            model.reset();
+            model.data.workflow.name = 'Untitled Workflow';
+            document.getElementById('workflowNameInput').value = '';
+            expandedStepId = null;
+            StorageManager.clearAutoSave();
+            this.showEmptyState();
+            this.updateLLMUI(); // flip assist bar back to "Generate Steps"
+            this.toast('Started a new workflow');
         },
 
         startFresh() {
