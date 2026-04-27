@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Workflow Analyzer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -212,6 +212,51 @@
             align-items: center;
             justify-content: center;
         }
+
+        /* Mobile hamburger menu */
+        .topbar-menu-btn {
+            display: none;
+            align-items: center; justify-content: center;
+            width: 36px; height: 36px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .topbar-menu-btn:hover { background: var(--bg); color: var(--text); }
+        .topbar-menu-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            padding: 6px;
+            display: none;
+            flex-direction: column;
+            min-width: 200px;
+            z-index: 120;
+            animation: modalEnter 0.15s ease;
+        }
+        .topbar-menu-dropdown.open { display: flex; }
+        .topbar-menu-dropdown button {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            color: var(--text);
+            background: transparent;
+            border: none;
+            text-align: left;
+            transition: var(--transition);
+        }
+        .topbar-menu-dropdown button:hover { background: var(--bg); }
+        .topbar-menu-dropdown button svg { color: var(--text-muted); flex-shrink: 0; }
 
         .btn-lg {
             font-size: 15px;
@@ -1348,15 +1393,27 @@
             .stat-grid { grid-template-columns: repeat(4, 1fr); }
             .template-grid { grid-template-columns: 1fr; }
         }
+        @media (max-width: 640px) {
+            .topbar-right #btnNew,
+            .topbar-right #btnTemplates,
+            .topbar-right #btnSaved { display: none; }
+            .topbar-menu-btn { display: inline-flex; }
+            .topbar-left { overflow: hidden; }
+            .workflow-name-input { min-width: 0; flex: 1 1 80px; }
+        }
         @media (max-width: 520px) {
-            .topbar-inner { height: 48px; }
+            .topbar-inner { height: 48px; gap: 10px; }
             .topbar-brand { font-size: 17px; }
-            .workflow-name-input { min-width: 100px; font-size: 13px; }
+            .workflow-name-input { font-size: 13px; }
             .step-header { padding: 10px 12px; gap: 8px; }
             .step-badges { display: none; }
             .stat-grid { grid-template-columns: 1fr 1fr; }
             .field-row { grid-template-columns: 1fr; }
             .time-stats { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 400px) {
+            .topbar-brand span { display: none; }
+            .topbar-divider { display: none; }
         }
 
         /* ============================================================
@@ -1688,6 +1745,23 @@
                 <button class="btn btn-icon btn-ghost" id="btnSettings" title="Settings">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 </button>
+                <button class="topbar-menu-btn" id="topbarMenuBtn" title="More" aria-label="More actions">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <div class="topbar-menu-dropdown" id="topbarMenuDropdown">
+                    <button type="button" data-action="new">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        New workflow
+                    </button>
+                    <button type="button" data-action="templates">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        Templates
+                    </button>
+                    <button type="button" data-action="saved">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Saved workflows
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
@@ -3825,6 +3899,28 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
             document.getElementById('btnAnalyze').addEventListener('click', () => this.analyze());
             document.getElementById('btnSettings').addEventListener('click', () => this.openModal('modalSettings'));
             document.getElementById('llmAssistBtn').addEventListener('click', () => this.llmGenerate());
+
+            // Mobile hamburger menu
+            const topbarMenuBtn = document.getElementById('topbarMenuBtn');
+            const topbarDropdown = document.getElementById('topbarMenuDropdown');
+            topbarMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                topbarDropdown.classList.toggle('open');
+            });
+            topbarDropdown.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+                topbarDropdown.classList.remove('open');
+                const action = btn.dataset.action;
+                if (action === 'new') this.newWorkflow();
+                else if (action === 'templates') this.openModal('modalTemplates');
+                else if (action === 'saved') this.openSavedModal();
+            });
+            document.addEventListener('click', (e) => {
+                if (!topbarDropdown.contains(e.target) && e.target !== topbarMenuBtn) {
+                    topbarDropdown.classList.remove('open');
+                }
+            });
             const llmBadge = document.getElementById('llmBadge');
             llmBadge.addEventListener('click', () => this.openModal('modalSettings'));
             llmBadge.addEventListener('keydown', (e) => {
@@ -3872,6 +3968,7 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
             // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
+                    document.getElementById('topbarMenuDropdown').classList.remove('open');
                     document.querySelectorAll('.modal-overlay.visible').forEach(m => {
                         if (m.id === 'modalOnboarding') Onboarding.dismiss();
                         else m.classList.remove('visible');
