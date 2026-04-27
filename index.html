@@ -1343,7 +1343,6 @@
             }
             .summary-sidebar {
                 position: static;
-                order: -1;
             }
             .summary-sidebar .sidebar-card { padding: 16px; }
             .stat-grid { grid-template-columns: repeat(4, 1fr); }
@@ -1877,52 +1876,59 @@
                 <button class="modal-close" onclick="Onboarding.dismiss()">&times;</button>
             </div>
             <div class="onboarding-body">
-                <!-- Slide 1: What it is -->
+                <!-- Slide 1: WHY — the problem + outcome -->
                 <div class="onboarding-slide active" data-slide="0">
                     <div class="onboarding-icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     </div>
-                    <div class="onboarding-title">Find what to automate, without the consultants.</div>
+                    <div class="onboarding-title">See exactly where your time goes - and what it costs.</div>
                     <div class="onboarding-desc">
-                        Map any business process, spot where time gets stuck, and see
-                        exactly how much you'd save by handing parts of it to AI.
+                        Map your team's workflow step by step. The analyzer finds
+                        your biggest time sinks, calculates the <strong>dollar cost</strong>,
+                        and recommends <strong>specific AI tools</strong> for each one.
                         <br><br>
-                        Built for teams that know their workflows are slow but can't
-                        easily explain <strong>where</strong> or <strong>how much</strong>.
+                        Think of it as a business case for automation - in 5 minutes,
+                        without hiring a consultant.
                     </div>
                 </div>
-                <!-- Slide 2: How to start -->
+                <!-- Slide 2: WHAT — concrete example of the output -->
                 <div class="onboarding-slide" data-slide="1">
-                    <div class="onboarding-icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    </div>
-                    <div class="onboarding-title">Two ways to start.</div>
-                    <div class="onboarding-desc">
-                        <strong>Pick a template</strong> like Insurance Claim Processing -
-                        a realistic 7-step workflow you can tweak to match your reality.
-                        <br><br>
-                        Or <strong>describe yours in plain English</strong> (needs a Claude
-                        or OpenAI key in Settings) and the tool generates the steps for you.
-                    </div>
-                    <div class="onboarding-examples">
-                        <strong>Try saying:</strong>
-                        <span>&ldquo;Auto claims processing for a mid-size insurer, 500 claims per week&rdquo;</span>
-                        <span>&ldquo;Underwriting review for small-business policies&rdquo;</span>
-                    </div>
-                </div>
-                <!-- Slide 3: What you get -->
-                <div class="onboarding-slide" data-slide="2">
                     <div class="onboarding-icon">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 12l4-4 4 4 6-6"/></svg>
                     </div>
-                    <div class="onboarding-title">Click Analyze. Get answers.</div>
+                    <div class="onboarding-title">Here's what the analysis looks like.</div>
+                    <div class="onboarding-examples">
+                        <strong>Your #1 bottleneck</strong>
+                        <span>&ldquo;Investigate &amp; gather evidence&rdquo; - 780 hours/year across the team</span>
+                        <strong>Potential savings</strong>
+                        <span>$47,000/year if you automate intake + triage + review</span>
+                        <strong>Recommended tools</strong>
+                        <span>Claude for document analysis, Zapier for auto-routing</span>
+                    </div>
+                    <div class="onboarding-desc" style="margin-top:14px;">
+                        Not generic advice. Every number comes from <strong>your</strong>
+                        steps, roles, and hourly rate.
+                    </div>
+                </div>
+                <!-- Slide 3: HOW — get started -->
+                <div class="onboarding-slide" data-slide="2">
+                    <div class="onboarding-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    </div>
+                    <div class="onboarding-title">Get started in 30 seconds.</div>
                     <div class="onboarding-desc">
-                        <strong>Bottlenecks</strong> - which steps eat the most time across a year.<br>
-                        <strong>ROI</strong> - real dollar savings at your team's hourly rate.<br>
-                        <strong>Action plan</strong> - specific AI tools to use for each step (Claude, Zapier, Perplexity, etc.).
+                        <strong>Pick a template</strong> (like Insurance Claim Processing)
+                        and tweak it to match your reality.
+                        Or <strong>describe your workflow in a sentence</strong> and AI generates
+                        the steps for you.
                         <br><br>
-                        After generating, type changes like &ldquo;add a fraud check after
-                        triage&rdquo; to <strong>refine it</strong> without starting over.
+                        Then hit <strong>Analyze</strong>. Refine after with plain-English
+                        edits like &ldquo;add a compliance check before approval.&rdquo;
+                    </div>
+                    <div class="onboarding-examples">
+                        <strong>Try saying:</strong>
+                        <span>&ldquo;Auto claims processing for a mid-size insurer, 500 claims/week&rdquo;</span>
+                        <span>&ldquo;New hire onboarding from offer letter to first day&rdquo;</span>
                     </div>
                 </div>
                 <!-- Slide 4: Make it yours + inline API key setup -->
