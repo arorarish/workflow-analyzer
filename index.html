@@ -1276,6 +1276,13 @@
             color: var(--text-muted);
             border: 1px solid var(--border);
             white-space: nowrap;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .llm-badge:hover {
+            background: var(--bg-selected);
+            color: var(--text);
+            border-color: var(--border-strong);
         }
         .llm-badge.connected {
             background: var(--green-bg);
@@ -1458,6 +1465,65 @@
             color: var(--text-muted);
             font-weight: 600;
         }
+        .onboarding-llm-form {
+            margin: 18px auto 0;
+            max-width: 440px;
+            text-align: left;
+        }
+        .onboarding-llm-row {
+            display: grid;
+            grid-template-columns: 110px 1fr auto;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .onboarding-llm-row .field-select,
+        .onboarding-llm-row .field-input {
+            height: 36px;
+            font-size: 13px;
+            padding: 6px 10px;
+        }
+        .onboarding-llm-row .btn {
+            height: 36px;
+            padding: 0 14px;
+            font-size: 13px;
+        }
+        .onboarding-llm-row .btn:disabled,
+        .onboarding-llm-row .field-select:disabled,
+        .onboarding-llm-row .field-input:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .onboarding-llm-status {
+            min-height: 18px;
+            margin-top: 8px;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+        .onboarding-llm-status.success { color: var(--green, #2d8a4e); }
+        .onboarding-llm-status.error { color: #c44; }
+        .onboarding-llm-status .status-change {
+            margin-left: 8px;
+            font-size: 11.5px;
+            color: var(--text-muted);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .onboarding-llm-hint {
+            margin-top: 14px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .onboarding-llm-hint a {
+            color: var(--border-focus);
+            text-decoration: none;
+        }
+        .onboarding-llm-hint a:hover { text-decoration: underline; }
+        @media (max-width: 520px) {
+            .onboarding-llm-row {
+                grid-template-columns: 1fr;
+            }
+            .onboarding-llm-row .btn { width: 100%; }
+        }
         .onboarding-footer {
             display: flex; align-items: center; justify-content: space-between;
             padding: 16px 24px 20px;
@@ -1563,7 +1629,7 @@
         // Runs immediately. Shows the gate unless this tab has already unlocked.
         (function () {
             var UNLOCK_KEY = 'wa_unlocked_v1';
-            var PASSWORD = 'workflow'; // client-side only — see note above
+            var PASSWORD = 'demo'; // client-side only — see note above
             var overlay = document.getElementById('gateOverlay');
             var unlocked = false;
             try { unlocked = sessionStorage.getItem(UNLOCK_KEY) === '1'; } catch (e) {}
@@ -1661,7 +1727,7 @@
                         placeholder="Describe your workflow in a sentence or two... (requires API key in Settings)"
                         disabled>
                     <button class="btn btn-primary llm-assist-btn" id="llmAssistBtn" disabled>Generate Steps</button>
-                    <span class="llm-badge" id="llmBadge">No API key</span>
+                    <span class="llm-badge" id="llmBadge" role="button" tabindex="0" title="Open API settings">No API key</span>
                 </div>
             </div>
             <div class="tree-container" id="treeContainer">
@@ -1799,7 +1865,7 @@
     </div>
 
     <!-- ============================================================
-         ONBOARDING MODAL (3 slides) + floating help icon.
+         ONBOARDING MODAL (4 slides) + floating help icon.
          Shows automatically the first time someone unlocks the gate.
          Dismissed via the localStorage key 'wa_onboarded_v1'.
          The help icon (bottom-right) re-opens it anytime.
@@ -1859,12 +1925,39 @@
                         triage&rdquo; to <strong>refine it</strong> without starting over.
                     </div>
                 </div>
+                <!-- Slide 4: Make it yours + inline API key setup -->
+                <div class="onboarding-slide" data-slide="3">
+                    <div class="onboarding-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </div>
+                    <div class="onboarding-title">Plug in an AI key (optional).</div>
+                    <div class="onboarding-desc">
+                        Lets you describe workflows in plain English and refine results
+                        with chat. Key stays in this browser tab only.
+                    </div>
+                    <div class="onboarding-llm-form" id="obLLMForm">
+                        <div class="onboarding-llm-row">
+                            <select class="field-select" id="obLLMProvider">
+                                <option value="anthropic">Claude</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="groq">Groq</option>
+                            </select>
+                            <input type="password" class="field-input" id="obLLMKey" placeholder="Paste your API key" autocomplete="off" spellcheck="false">
+                            <button class="btn btn-primary" id="obLLMConnect" type="button">Connect</button>
+                        </div>
+                        <div class="onboarding-llm-status" id="obLLMStatus"></div>
+                    </div>
+                    <div class="onboarding-llm-hint">
+                        Prefer full controls? <a href="#" id="obOpenSettings">Open Settings</a> for models, proxy, and hourly rate (drives ROI).
+                    </div>
+                </div>
             </div>
             <div class="onboarding-footer">
                 <div class="onboarding-dots">
                     <div class="onboarding-dot active" data-dot="0"></div>
                     <div class="onboarding-dot" data-dot="1"></div>
                     <div class="onboarding-dot" data-dot="2"></div>
+                    <div class="onboarding-dot" data-dot="3"></div>
                 </div>
                 <div class="onboarding-nav">
                     <button class="onboarding-btn" id="obBack" onclick="Onboarding.prev()" disabled>Back</button>
@@ -3608,12 +3701,12 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
     // ONBOARDING CONTROLLER
     // Auto-shows once (per browser, via localStorage) after the
     // password gate is unlocked. The floating "?" button re-opens
-    // it anytime. Three slides, with simple next/back/dots nav.
+    // it anytime. Four slides, with simple next/back/dots nav.
     // ============================================================
     const Onboarding = {
         ONBOARDED_KEY: 'wa_onboarded_v1',
         UNLOCK_KEY: 'wa_unlocked_v1',
-        TOTAL_SLIDES: 3,
+        TOTAL_SLIDES: 4,
         currentSlide: 0,
 
         // Called from App.init + from the gate unlock handler.
@@ -3669,6 +3762,12 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
             const nextBtn = document.getElementById('obNext');
             backBtn.disabled = this.currentSlide === 0;
             nextBtn.textContent = this.currentSlide === this.TOTAL_SLIDES - 1 ? 'Got it' : 'Next';
+
+            // Slide 4 has an inline LLM connect form — refresh its state to
+            // match the current llmState (shows "Connected" or the input form).
+            if (this.currentSlide === 3 && window.App && App.renderInlineLLMStatus) {
+                App.renderInlineLLMStatus();
+            }
         }
     };
     // Expose to window so the separately-scoped gate <script> (IIFE) and
@@ -3720,6 +3819,31 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
             document.getElementById('btnAnalyze').addEventListener('click', () => this.analyze());
             document.getElementById('btnSettings').addEventListener('click', () => this.openModal('modalSettings'));
             document.getElementById('llmAssistBtn').addEventListener('click', () => this.llmGenerate());
+            const llmBadge = document.getElementById('llmBadge');
+            llmBadge.addEventListener('click', () => this.openModal('modalSettings'));
+            llmBadge.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.openModal('modalSettings'); }
+            });
+
+            // Onboarding slide 4 — inline LLM connect
+            document.getElementById('obLLMConnect').addEventListener('click', () => this.inlineConnect());
+            document.getElementById('obLLMKey').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); this.inlineConnect(); }
+            });
+            document.getElementById('obLLMStatus').addEventListener('click', (e) => {
+                if (e.target.dataset.action === 'change-llm') {
+                    // User wants to edit the connection — disconnect inline state
+                    // and re-enable the form so they can paste a new key.
+                    llmState = { provider: 'none', apiKey: '', model: '', proxyUrl: '', connected: false };
+                    this.updateLLMUI();
+                    this.renderInlineLLMStatus();
+                }
+            });
+            document.getElementById('obOpenSettings').addEventListener('click', (e) => {
+                e.preventDefault();
+                Onboarding.dismiss();
+                this.openModal('modalSettings');
+            });
             document.getElementById('llmAssistInput').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.llmGenerate(); }
             });
@@ -4066,6 +4190,63 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
                 opt.textContent = m.name;
                 modelSelect.appendChild(opt);
             });
+        },
+
+        // Inline LLM connect from the onboarding slide — mirrors saveSettings()
+        // but uses the compact form inside slide 4 and defaults to the first
+        // model for the chosen provider (users who want to pick a specific
+        // model can still use the full Settings modal).
+        inlineConnect() {
+            const provider = document.getElementById('obLLMProvider').value;
+            const apiKey = document.getElementById('obLLMKey').value.trim();
+            const status = document.getElementById('obLLMStatus');
+
+            if (!apiKey) {
+                status.className = 'onboarding-llm-status error';
+                status.textContent = 'Please paste an API key first.';
+                return;
+            }
+
+            const config = PROVIDER_CONFIG[provider];
+            const defaultModel = config.models[0].id;
+
+            llmState.provider = provider;
+            llmState.apiKey = apiKey;
+            llmState.model = defaultModel;
+            llmState.proxyUrl = '';
+            llmState.connected = true;
+
+            this.updateLLMUI();
+            this.renderInlineLLMStatus();
+            this.toast(`Connected to ${config.name}`);
+        },
+
+        // Refreshes slide 4's inline form to reflect the current llmState.
+        // Called whenever slide 4 is rendered.
+        renderInlineLLMStatus() {
+            const status = document.getElementById('obLLMStatus');
+            const form = document.getElementById('obLLMForm');
+            if (!status || !form) return;
+
+            if (llmState.connected && llmState.provider !== 'none') {
+                const providerName = PROVIDER_CONFIG[llmState.provider].name;
+                status.className = 'onboarding-llm-status success';
+                status.innerHTML = `&#10003; Connected to ${providerName}.<span class="status-change" data-action="change-llm">Change</span>`;
+                // Disable form inputs to signal the connected state
+                document.getElementById('obLLMProvider').value = llmState.provider;
+                document.getElementById('obLLMKey').value = '';
+                document.getElementById('obLLMKey').placeholder = '(key saved in this tab)';
+                document.getElementById('obLLMProvider').disabled = true;
+                document.getElementById('obLLMKey').disabled = true;
+                document.getElementById('obLLMConnect').disabled = true;
+            } else {
+                status.className = 'onboarding-llm-status';
+                status.textContent = '';
+                document.getElementById('obLLMKey').placeholder = 'Paste your API key';
+                document.getElementById('obLLMProvider').disabled = false;
+                document.getElementById('obLLMKey').disabled = false;
+                document.getElementById('obLLMConnect').disabled = false;
+            }
         },
 
         saveSettings() {
