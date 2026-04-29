@@ -1892,9 +1892,9 @@
                         <label class="field-label">Provider</label>
                         <select class="field-select" id="settingsProvider" onchange="App.onProviderChange()">
                             <option value="none">None (tool works fully without AI)</option>
+                            <option value="anthropic">Anthropic (Claude Opus, Sonnet, Haiku)</option>
                             <option value="openai">OpenAI (GPT-4o, GPT-4o-mini)</option>
                             <option value="groq">Groq (Llama 3.3, Mixtral)</option>
-                            <option value="anthropic">Anthropic (Claude Opus, Sonnet, Haiku)</option>
                         </select>
                     </div>
 
@@ -2017,12 +2017,11 @@
                     </div>
                     <div class="onboarding-llm-form" id="obLLMForm">
                         <div class="onboarding-llm-row">
-                            <select class="field-select" id="obLLMProvider">
-                                <option value="anthropic">Claude</option>
-                                <option value="openai">OpenAI</option>
-                                <option value="groq">Groq</option>
+                            <select class="field-select" id="obLLMProvider" onchange="App.updateInlinePlaceholder && App.updateInlinePlaceholder()">
+                                <option value="anthropic">Claude Opus</option>
+                                <option value="openai">OpenAI GPT-4o</option>
                             </select>
-                            <input type="password" class="field-input" id="obLLMKey" placeholder="Paste your API key" autocomplete="off" spellcheck="false">
+                            <input type="password" class="field-input" id="obLLMKey" placeholder="Paste your Claude API key (sk-ant-...)" autocomplete="off" spellcheck="false">
                             <button class="btn btn-primary" id="obLLMConnect" type="button">Connect</button>
                         </div>
                         <div class="onboarding-llm-status" id="obLLMStatus"></div>
@@ -4345,10 +4344,24 @@ Preserve steps the user didn't ask to change. Keep existing ordering unless they
             } else {
                 status.className = 'onboarding-llm-status';
                 status.textContent = '';
-                document.getElementById('obLLMKey').placeholder = 'Paste your API key';
                 document.getElementById('obLLMProvider').disabled = false;
                 document.getElementById('obLLMKey').disabled = false;
                 document.getElementById('obLLMConnect').disabled = false;
+                this.updateInlinePlaceholder();
+            }
+        },
+
+        // Updates the API key placeholder to match the selected provider
+        // so non-technical users know exactly which key to paste.
+        updateInlinePlaceholder() {
+            const provider = document.getElementById('obLLMProvider').value;
+            const keyInput = document.getElementById('obLLMKey');
+            if (provider === 'anthropic') {
+                keyInput.placeholder = 'Paste your Claude API key (sk-ant-...)';
+            } else if (provider === 'openai') {
+                keyInput.placeholder = 'Paste your OpenAI API key (sk-...)';
+            } else {
+                keyInput.placeholder = 'Paste your API key';
             }
         },
 
